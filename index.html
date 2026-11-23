@@ -364,6 +364,9 @@ ul.steps li::before{content:'';position:absolute;left:5px;top:6px;width:12px;hei
 @media(max-width:600px){.pe{grid-template-columns:repeat(2,minmax(0,1fr))}.route{grid-template-columns:112px minmax(0,1fr)}}
 @media(max-width:374px){.top h1{font-size:var(--fs-3xl)}.top h1 small{font-size:var(--fs-xl)}.cluster{width:84px;height:46px}.vchips{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(min-width:900px){main,nav .in,.top .in{max-width:820px}}
+.upd{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--s3) + env(safe-area-inset-top));z-index:40;display:flex;align-items:center;gap:var(--s3);max-width:calc(100% - 2*var(--gutter));padding:var(--s2) var(--s2) var(--s2) var(--s4);border-radius:var(--r3);background:var(--granite);color:var(--ink-on-dark);font:600 var(--fs-md)/1.2 var(--f-body);box-shadow:0 10px 28px -8px rgba(0,0,0,.6)}
+.upd button{min-height:44px;padding:0 var(--s4);border:0;border-radius:var(--r2);background:var(--h-red);color:#fff;font:700 var(--fs-md)/1 var(--f-body)}
+.upd button.x{background:none;color:var(--ink-on-dark-2);padding:0 var(--s2)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0s!important;animation-duration:0s!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -1269,6 +1272,32 @@ tb.onclick=()=>{
 };
 bindViewers();
 boot();
+}
+</script>
+<script>
+/* ---------- auto-update ----------
+   GitHub Pages always serves the latest main, but an iPhone home-screen app can keep showing a cached copy.
+   On launch (and when you come back after 30+ min) fetch a fresh copy of this page, which also refreshes the
+   browser cache, and compare it with the cached copy that is running. If it changed: reload straight away when
+   you haven't touched anything yet, otherwise offer a Reload bar. Saved data is untouched (same address). */
+{
+  let touched=false,lastCheck=0;const t0=Date.now();
+  ['pointerdown','keydown','input'].forEach(e=>addEventListener(e,()=>{touched=true},{capture:true,once:true}));
+  const bar=()=>{if(document.querySelector('.upd'))return;const d=document.createElement('div');d.className='upd';d.setAttribute('role','status');
+    d.innerHTML='<span>New version ready</span><button type="button">Reload</button><button type="button" class="x" aria-label="Later">Later</button>';
+    d.querySelector('button').onclick=()=>location.reload();d.querySelector('.x').onclick=()=>d.remove();document.body.appendChild(d)};
+  async function checkUpdate(){
+    if(!/^https?:$/.test(location.protocol)||!window.fetch)return;
+    lastCheck=Date.now();
+    try{const url=location.origin+location.pathname;
+      const running=await (await fetch(url,{cache:'force-cache'})).text();
+      const r=await fetch(url,{cache:'reload'});if(!r.ok)return;const fresh=await r.text();
+      if(!fresh||fresh===running)return;
+      if(!touched&&Date.now()-t0<8000)location.reload();else bar();
+    }catch(e){/* offline or blocked: keep running the current copy */}
+  }
+  addEventListener('load',()=>setTimeout(checkUpdate,600));
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-lastCheck>30*60e3)checkUpdate()});
 }
 </script>
 </body>

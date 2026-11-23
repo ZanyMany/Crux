@@ -52,6 +52,8 @@
  --skin-line:light-dark(#8a939a,#59636b);
  --metal:light-dark(#3f474d,#cdd4da);
  --metal-hi:light-dark(#8a949b,#ffffff);
+ --plate:light-dark(#4a5258,#7d8891);
+ --plate-far:light-dark(#384045,#4d565e);
  --mus-main:light-dark(#e0392b,#ff5747);
  --mus-help:light-dark(#f1a198,#8f4740);
  --stage:light-dark(#eef0ef,#1d2226);
@@ -494,19 +496,28 @@ const MUS={
  'External rotations (7 lb)':{p:['rotator'],s:['reard'],why:'Protects the small shoulder muscles that climbing overloads.'},
  'Reverse wrist curls (7 lb)':{p:['fext'],s:[],why:'Balances your grip muscles and helps prevent climber\'s elbow.'}};
 const musDiag=n=>{const m=MUS[n];if(!m)return'';
- const col=k=>m.p.includes(k)?'var(--rope)':m.s.includes(k)?'var(--sec)':'var(--fig2)';
+ const col=k=>m.p.includes(k)?'var(--mus-main)':m.s.includes(k)?'var(--mus-help)':'var(--skin)';
  const half=M=>Object.entries(M).map(([k,d])=>`<path d="${d}" fill="${col(k)}"/>`).join('');
  const both=s=>s+`<g transform="translate(160,0) scale(-1,1)">${s}</g>`;
- const view=(M,dx,lab,back)=>`<g transform="translate(${dx},6)"><ellipse cx="80" cy="28" rx="14" ry="18" fill="var(--fig)"/>${both(`<path d="${BODY}" fill="var(--fig)"/>`)}
-  ${back?'':'<path d="M74,40 Q80,44 86,40" stroke="var(--fig2)" stroke-width="1.5" fill="none"/>'}<g stroke="var(--soft)" stroke-width="1.2" stroke-linejoin="round">${both(half(M))}</g>
-  <text x="80" y="356" font-size="11.5" font-weight="700" fill="var(--ink)" text-anchor="middle">${lab}</text></g>`;
- const chip=(k,c)=>`<span class="mchip"><i style="background:${c}"></i>${MN[k]}</span>`;
- return `<div class="mus"><svg class="dg" viewBox="0 0 360 370" role="img" aria-label="Muscles worked: ${esc(m.p.map(k=>MN[k]).join(', '))}"><rect width="360" height="370" rx="14" fill="var(--soft)"/><line x1="180" x2="180" y1="14" y2="356" stroke="var(--line)"/>${view(MF,10,'Front',0)}${view(MB,190,'Back',1)}</svg>
- <p class="vnote"><i class="dot" style="background:var(--rope)"></i><b>Main:</b> ${m.p.map(k=>MN[k]).join(', ')}</p>${m.s.length?`<p class="vnote"><i class="dot" style="background:var(--sec)"></i><b>Helpers:</b> ${m.s.map(k=>MN[k]).join(', ')}</p>`:''}
- <p class="note" style="margin-top:6px">${esc(m.why)}</p></div>`};
+ const view=(M,dx,lab,back)=>`<g transform="translate(${dx},8)">
+  <g fill="var(--skin-edge)" stroke="var(--skin-edge)" stroke-width="3" stroke-linejoin="round"><ellipse cx="80" cy="27" rx="13.5" ry="17"/>${both(`<path d="${BODY}"/>`)}</g>
+  <g fill="var(--skin)"><ellipse cx="80" cy="27" rx="13.5" ry="17"/>${both(`<path d="${BODY}"/>`)}</g>
+  <g stroke="var(--skin-line)" stroke-width="1" stroke-linejoin="round">${both(half(M))}</g>
+  ${back?'<path d="M80,48 V176" stroke="var(--skin-line)" stroke-width="1"/>':'<path d="M74,40 Q80,44 86,40" stroke="var(--skin-line)" stroke-width="1.4" fill="none"/>'}
+  <text x="80" y="356" font-size="12" font-weight="700" fill="var(--ink-2)" text-anchor="middle" letter-spacing="1">${lab}</text></g>`;
+ const names=k=>k.map(x=>MN[x]).join(', ');
+ return `<div class="mus"><svg class="dg" viewBox="0 0 360 372" role="img" aria-label="Muscles worked. Main: ${esc(names(m.p))}.${m.s.length?' Helpers: '+esc(names(m.s))+'.':''}"><rect width="360" height="372" fill="var(--stage)"/><line x1="180" x2="180" y1="16" y2="356" stroke="var(--line)"/>${view(MF,10,'FRONT',0)}${view(MB,190,'BACK',1)}</svg>
+ <div class="mleg"><p class="vnote"><i class="k main" aria-hidden="true"></i><span><b>Main:</b> ${names(m.p)}</span></p>${m.s.length?`<p class="vnote"><i class="k help" aria-hidden="true"></i><span><b>Helpers:</b> ${names(m.s)}</span></p>`:''}</div>
+ <p class="why">${esc(m.why)}</p></div>`};
 
-/* ===== Figure engine v2: proportioned (≈7.75 heads), joint-angle driven, animatable ===== */
-const LEN={t:50,ua:31,fa:25,th:41,sh:36,nk:6};
+/* ===== Figure engine v3 =====
+   Poses are joint angles in degrees (0 = straight down the screen, 90 = right, 180 = up), so any two
+   poses interpolate smoothly. Proportions follow an 8-head canon: head 20.8 units, hips at head 4,
+   knees at head 6. A figure is drawn as layered unions so it reads as ONE silhouette:
+   far limbs (darker, behind) -> body silhouette (single outline) -> near arm (soft contour where it
+   crosses the body). Ghost and mistake outlines are masked so only the outer silhouette is stroked. */
+const LEN={t:55,ua:31,fa:26,th:42,sh:37,nk:6.5};
+const RB=2.4; /* bar radius (slightly larger than life so the grip reads) */
 const D2R=Math.PI/180,dir=a=>[Math.sin(a*D2R),Math.cos(a*D2R)];
 const ad=(p,v,l=1)=>[p[0]+v[0]*l,p[1]+v[1]*l];
 const pp=d=>[-d[1],d[0]];
@@ -514,6 +525,7 @@ const nz=v=>{const l=Math.hypot(v[0],v[1])||1;return[v[0]/l,v[1]/l]};
 const sub=(a,b)=>[a[0]-b[0],a[1]-b[1]];
 const dot=(a,b)=>a[0]*b[0]+a[1]*b[1];
 const crs=(a,b)=>a[0]*b[1]-a[1]*b[0];
+const neg=v=>[-v[0],-v[1]];
 const F=p=>p[0].toFixed(1)+','+p[1].toFixed(1);
 function smooth(pts,closed=true){const n=pts.length;let d='M'+F(pts[0]);const m=closed?n:n-1;
   for(let i=0;i<m;i++){const p0=pts[(i-1+n)%n],p1=pts[i],p2=pts[(i+1)%n],p3=pts[(i+2)%n];
@@ -521,218 +533,293 @@ function smooth(pts,closed=true){const n=pts.length;let d='M'+F(pts[0]);const m=
     d+=`C${F([p1[0]+(p2[0]-a[0])/6,p1[1]+(p2[1]-a[1])/6])} ${F([p2[0]-(b[0]-p1[0])/6,p2[1]-(b[1]-p1[1])/6])} ${F(p2)}`}
   return d+(closed?'Z':'')}
 const knot=(k,u)=>{if(u<=k[0][0])return k[0][1];for(let i=1;i<k.length;i++)if(u<=k[i][0]){const t=(u-k[i-1][0])/(k[i][0]-k[i-1][0]);return k[i-1][1]+(k[i][1]-k[i-1][1])*t}return k[k.length-1][1]};
-/* limb radius profiles: [u, radius] ; f = flexor/inner side, b = outer side */
+/* limb radius profiles [u, radius]; f = flexor / front side, b = extensor / back side */
 const PRO={
- ua:{f:[[0,5.4],[.3,5.7],[.55,5.1],[.8,4.3],[1,3.8]],b:[[0,5.8],[.3,6],[.55,5.1],[.8,4.2],[1,3.8]]},
- fa:{f:[[0,3.9],[.22,4.5],[.5,3.8],[.8,3],[1,2.6]],b:[[0,4.1],[.22,4.3],[.5,3.4],[.8,2.8],[1,2.5]]},
- th:{f:[[0,8.4],[.3,8.1],[.6,7],[.85,5.6],[1,4.9]],b:[[0,8.8],[.3,8.3],[.6,7.1],[.85,5.8],[1,5]]},
- sh:{f:[[0,4.9],[.3,4.4],[.6,3.7],[.9,2.9],[1,2.8]],b:[[0,5],[.25,6.2],[.5,4.8],[.8,3.2],[1,2.8]]}};
-const TF=[[1.05,3.6],[.95,6.6],[.84,9.3],[.72,9.8],[.6,8.6],[.45,7.4],[.3,7.6],[.15,8.2],[.02,7.1],[-.08,4.6]];
-const TB=[[-.08,-6],[-.02,-9.7],[.1,-9.5],[.22,-6.9],[.36,-6.3],[.52,-7.7],[.7,-9.7],[.86,-9.5],[.98,-6.2],[1.05,-4.2]];
+ ua:{f:[[0,5.6],[.3,5.9],[.55,5.2],[.8,4.3],[1,3.8]],b:[[0,6],[.3,6.2],[.55,5.2],[.8,4.2],[1,3.8]]},
+ fa:{f:[[0,3.9],[.2,4.6],[.45,4],[.8,3],[1,2.6]],b:[[0,4.2],[.2,4.4],[.5,3.5],[.8,2.8],[1,2.5]]},
+ th:{f:[[0,8.6],[.3,8.3],[.62,7.1],[.86,5.6],[1,4.9]],b:[[0,9],[.3,8.4],[.62,7.1],[.86,5.8],[1,5]]},
+ sh:{f:[[0,4.9],[.3,4.5],[.6,3.7],[.9,2.8],[1,2.7]],b:[[0,5],[.25,6.4],[.5,5],[.8,3.2],[1,2.8]]}};
+/* torso profile along hip->shoulder (u) with signed offset from the spine line: + front (chest/abs), - back (glutes/back) */
+const TF=[[1.05,3.8],[.95,6.8],[.84,9.6],[.72,9.9],[.6,8.6],[.46,7.5],[.3,7.7],[.15,8.3],[.02,7.2],[-.08,4.6]];
+const TB=[[-.08,-6.2],[-.02,-10],[.1,-9.6],[.22,-6.8],[.36,-6.2],[.52,-7.8],[.7,-9.9],[.86,-9.6],[.98,-6.2],[1.05,-4.2]];
 const TBflat=TB.map(([u,v])=>[u,u>.15&&u<.6?-9.3:v]);
 const prof=(k,u)=>knot(k.slice().sort((a,b)=>a[0]-b[0]),u);
-/* limb outline: a→b, n = unit normal of the "f" side */
 function limbPts(a,b,P,n){const d=nz(sub(b,a)),L=Math.hypot(b[0]-a[0],b[1]-a[1]),U=[0,.15,.35,.55,.75,.9,1],o=[];
   U.forEach(u=>o.push(ad(ad(a,d,u*L),n,knot(P.f,u))));
   o.push(ad(b,d,knot(P.f,1)*.85));
   U.slice().reverse().forEach(u=>o.push(ad(ad(a,d,u*L),n,-knot(P.b,u))));
   o.push(ad(a,d,-knot(P.b,0)*.7));return o}
+/* muscle region shapes: 'fan' widens toward u1 (lats), 'rfan' narrows (delts), default = spindle (biceps) */
 const TAPER=(i,N,mode)=>mode==='fan'?.3+.7*Math.pow(i/N,.7):mode==='rfan'?1-.7*Math.pow(i/N,.9):mode==='flat'?1:.12+.88*Math.pow(Math.sin(Math.PI*i/N),.6);
 function limbRegion(a,b,P,n,u0,u1,side,v0=0,v1=1,mode){const d=nz(sub(b,a)),L=Math.hypot(b[0]-a[0],b[1]-a[1]),o=[],s=side==='f'?1:-1,K=side==='f'?P.f:P.b,N=10;
-  for(let i=0;i<=N;i++){const u=u0+(u1-u0)*i/N,r=knot(K,u);o.push(ad(ad(a,d,u*L),n,s*r*v1*.94))}
-  for(let i=N;i>=0;i--){const u=u0+(u1-u0)*i/N,tp=TAPER(i,N,mode),r=knot(K,u);o.push(ad(ad(a,d,u*L),n,s*r*(v1*.94-(v1*.94-v0)*tp)))}return o}
+  for(let i=0;i<=N;i++){const u=u0+(u1-u0)*i/N,r=knot(K,u);o.push(ad(ad(a,d,u*L),n,s*r*v1*.93))}
+  for(let i=N;i>=0;i--){const u=u0+(u1-u0)*i/N,tp=TAPER(i,N,mode),r=knot(K,u);o.push(ad(ad(a,d,u*L),n,s*r*(v1*.93-(v1*.93-v0)*tp)))}return o}
 function torsoPts(H,S,n,flat){const d=nz(sub(S,H)),L=Math.hypot(S[0]-H[0],S[1]-H[1]),o=[];
   TF.forEach(([u,v])=>o.push(ad(ad(H,d,u*L),n,v)));(flat?TBflat:TB).forEach(([u,v])=>o.push(ad(ad(H,d,u*L),n,v)));return o}
 function torsoRegion(H,S,n,u0,u1,side,v0,v1,flat,mode){const d=nz(sub(S,H)),L=Math.hypot(S[0]-H[0],S[1]-H[1]),K=side==='f'?TF:(flat?TBflat:TB),o=[],N=10;
-  for(let i=0;i<=N;i++){const u=u0+(u1-u0)*i/N,tp=TAPER(i,N,mode),r=prof(K,u);o.push(ad(ad(H,d,u*L),n,r*v1*.96))}
-  for(let i=N;i>=0;i--){const u=u0+(u1-u0)*i/N,tp=TAPER(i,N,mode),r=prof(K,u);o.push(ad(ad(H,d,u*L),n,r*(v1*.96-(v1*.96-v0)*tp)))}return o}
-function footPts(A,fd){const fn=pp(fd);return[ad(ad(A,fd,-2.6),fn,-3.4),ad(ad(A,fd,-4.4),fn,3.4),ad(ad(A,fd,6),fn,4.2),ad(ad(A,fd,15),fn,4.2),ad(ad(A,fd,19.5),fn,2.6),ad(ad(A,fd,18),fn,.2),ad(ad(A,fd,8),fn,-2.4),ad(ad(A,fd,1),fn,-3.4)]}
+  for(let i=0;i<=N;i++){const u=u0+(u1-u0)*i/N,r=prof(K,u);o.push(ad(ad(H,d,u*L),n,r*v1*.95))}
+  for(let i=N;i>=0;i--){const u=u0+(u1-u0)*i/N,tp=TAPER(i,N,mode),r=prof(K,u);o.push(ad(ad(H,d,u*L),n,r*(v1*.95-(v1*.95-v0)*tp)))}return o}
+/* foot: heel, sole, ball, toes, instep (fd = heel->toe, +pp(fd) = sole side) */
+function footPts(A,fd){const fn=pp(fd),q=(u,v)=>ad(ad(A,fd,u),fn,v);
+  return[q(-1.6,-3.4),q(-4.4,-.6),q(-4.6,2.4),q(-2.8,4.5),q(5,4.6),q(14.4,4.5),q(18.6,3.6),q(19,1.8),q(16.6,.4),q(9.5,-1.6),q(3,-3.6)]}
+/* side head: skull, brow, nose, lips, chin, jaw (u = up, v = facing) */
+function headPts(N,up,face,noFace){const C=ad(N,up,9.8),q=(u,v)=>ad(ad(C,up,u),face,v);
+  return noFace?[q(10.4,0),q(7.4,7.4),q(0,9.2),q(-7.4,7.4),q(-10.4,0),q(-7.4,-7.4),q(0,-9.2),q(7.4,-7.4)]
+   :[q(10.4,-.8),q(9.2,4.6),q(6.4,7.6),q(3.8,8.3),q(2.4,8.8),q(.4,10.5),q(-.9,9.3),q(-2.1,9.1),q(-3.2,8.7),q(-4.2,9),q(-6.2,8.6),q(-8,7),q(-8.4,4.2),q(-6.8,.6),q(-5.4,-3.6),q(-3.2,-8.4),q(1,-9.6),q(5.8,-8.6),q(9,-5.4)]}
 
 /* ---------- side view ---------- */
 function sidePose(o){
-  const H=[0,0],dt=dir(o.to),S=ad(H,dt,LEN.t),n0=pp(dt),n=o.flipN?[-n0[0],-n0[1]]:n0;
+  const H=[0,0],dt=dir(o.to),S=ad(H,dt,LEN.t),n0=pp(dt),n=o.flipN?neg(n0):n0;
   const e=o.elev||0,sh=v=>ad(v,dt,-e);
   const So=ad(S,n,o.armOff||0);
-  const E=ad(So,dir(o.ua),LEN.ua),W=ad(E,dir(o.fa),LEN.fa);
-  const hk=o.hand||'grip',ha=o.ha??o.fa,G=hk==='flat'?ad(W,[0,1],0):hk==='grip'?ad(ad(W,dir(ha),6.2),n,4.7):ad(W,dir(ha),6.5);
+  let E,W;
+  if(o.wy!=null){W=[So[0]+(o.wx??3),So[1]-o.wy];E=ik(So,W,LEN.ua,LEN.fa,c=>c[1]);W=ad(E,nz(sub(W,E)),LEN.fa)}
+  else{E=ad(So,dir(o.ua),LEN.ua);
+   if(o.er!=null){/* forearm rotating about the upper arm, seen in 3/4: foreshortened as it turns toward you */
+    const th=o.er*D2R,v=[(o.erK??-.62)*Math.sin(th),Math.cos(th)];W=ad(E,nz(v),LEN.fa*Math.max(.35,Math.hypot(v[0],v[1])))}
+   else W=ad(E,dir(o.fa),LEN.fa)}
+  const angOf=v=>Math.atan2(v[0],v[1])/D2R;
+  const hk=o.hand||'grip',ha=o.ha??(o.wy!=null?180:angOf(sub(W,E))),hd=dir(ha),pv=o.palm===-1?neg(pp(hd)):pp(hd);
+  const G=hk==='grip'?ad(ad(W,hd,9),n,RB+1.7):hk==='db'?ad(ad(W,pv,1.6),hd,6.8):hk==='flat'?W:ad(W,hd,7);
   const K=ad(H,dir(o.th),LEN.th),A=ad(K,dir(o.sh),LEN.sh);
-  const N=ad(ad(S,dt,LEN.nk),n0,o.noFace?0:2.6);
-  const P={H:sh(H),S:sh(S),So,E,W,G,K:sh(K),A:sh(A),N:sh(N),n,dt};
-  P.up=dir(o.to+(o.ht??-10));
-  P.fd=dir(o.ft??(o.sh+90));P.ha=ha;
+  const N=ad(ad(S,dt,LEN.nk),n0,o.noFace?0:2.4);
+  const up=dir(o.to+(o.ht??-10)),face=o.flipN?neg(pp(up)):pp(up);
+  const C=ad(N,up,9.8),Ch=ad(ad(C,up,-7.6),face,7.4);
+  const P={H:sh(H),S:sh(S),So,E,W,G,K:sh(K),A:sh(A),N:sh(N),Ch:sh(Ch),n,dt,up,face,hd,pv,ha};
+  P.fd=dir(o.ft??(o.sh+90));
   return P}
+/* two-bone IK: elbow position for shoulder A and wrist B; pick() scores the two solutions */
+function ik(A,B,l1,l2,pick){const d0=Math.hypot(B[0]-A[0],B[1]-A[1]),d=Math.max(Math.abs(l1-l2)+.01,Math.min(l1+l2-.01,d0)),ph=Math.atan2(B[1]-A[1],B[0]-A[0]),al=Math.acos(Math.max(-1,Math.min(1,(l1*l1+d*d-l2*l2)/(2*l1*d))));
+ const c1=[A[0]+Math.cos(ph+al)*l1,A[1]+Math.sin(ph+al)*l1],c2=[A[0]+Math.cos(ph-al)*l1,A[1]+Math.sin(ph-al)*l1];return pick(c1)>=pick(c2)?c1:c2}
+const VEC=new Set(['n','dt','up','fd','face','hd','pv']);
 function place(P,o){const a=P[o.anchor||'G'],s=o.sc||1;const out={};for(const k in P){const v=P[k];
-  out[k]=(Array.isArray(v)&&v.length===2&&k!=='n'&&k!=='dt'&&k!=='up'&&k!=='fd')?[o.at[0]+(v[0]-a[0])*s,o.at[1]+(v[1]-a[1])*s]:v}
+  out[k]=(Array.isArray(v)&&v.length===2&&!VEC.has(k))?[o.at[0]+(v[0]-a[0])*s,o.at[1]+(v[1]-a[1])*s]:v}
   out.s=s;return out}
-const innerN=(a,b,c,fallback)=>{const d=nz(sub(b,a)),x=crs(d,sub(c,a)),nn=pp(d);if(Math.abs(x)<2)return dot(nn,fallback)>=0?nn:[-nn[0],-nn[1]];return x>0?nn:[-nn[0],-nn[1]]};
-/* scale helper: geometry is computed unscaled then placed; we scale radii by s via scaling points around anchor (done by computing in unscaled space then mapping) */
+const innerN=(a,b,c,fallback)=>{const d=nz(sub(b,a)),x=crs(d,sub(c,a)),nn=pp(d);if(Math.abs(x)<2)return dot(nn,fallback)>=0?nn:neg(nn);return x>0?nn:neg(nn)};
 function mapPts(pts,o,P0){const a=P0[o.anchor||'G'],s=o.sc||1;return pts.map(v=>[o.at[0]+(v[0]-a[0])*s,o.at[1]+(v[1]-a[1])*s])}
 const MREG_SIDE={
  lats:[['torso',.36,.9,'b',.05,1,'fan']],traps:[['torso',.62,1.04,'b',.3,1,'fan']],rotator:[['torso',.76,.9,'b',.6,1]],lowback:[['torso',.04,.38,'b',.5,1]],
  pecs:[['torso',.7,.95,'f',.3,1]],abs:[['torso',.1,.66,'f',.55,1]],obl:[['torso',.12,.62,'f',.05,.55]],serratus:[['torso',.55,.72,'f',0,.35]],
- hip:[['torso',-.07,.12,'f',.25,1],['th',0,.2,'f',0,1]],quads:[['th',.12,.92,'f',0,1]],
+ hip:[['torso',-.07,.12,'f',.25,1],['th',0,.2,'f',0,1]],quads:[['th',.12,.92,'f',0,1]],glutes:[['torso',-.08,.16,'b',.2,1]],
  biceps:[['ua',.28,.88,'f',0,1]],triceps:[['ua',.22,.9,'b',0,1]],frontd:[['ua',-.06,.36,'f',0,1.05,'rfan']],reard:[['ua',-.06,.36,'b',0,1.05,'rfan']],
  fflex:[['fa',.04,.72,'f',0,1]],fext:[['fa',.04,.72,'b',0,1]]};
-function drawSide(o,st){/* st: {style:'body'|'ghost'|'bad', mus:{key:'p'|'s'}} */
-  const P0=sidePose(o),M=v=>mapPts(v,o,P0),P=place(P0,o),s=o.sc||1,style=st.style||'body';
-  const fill=style==='body'?'var(--fig)':style==='bad'?'var(--rope)':'none',far=style==='body'?'var(--fig2)':fill;
-  const stroke=style==='body'?'var(--fig2)':style==='bad'?'var(--rope)':'var(--mute)';
-  const attr=(f)=>style==='body'?`fill="${f}" stroke="${stroke}" stroke-width=".7" stroke-linejoin="round"`:style==='bad'?`fill="var(--rope)" fill-opacity=".07" stroke="var(--rope)" stroke-width="1.3" stroke-dasharray="4 3"`:`fill="none" stroke="var(--mute)" stroke-width="1.1" stroke-dasharray="3 3" opacity=".8"`;
-  const OL=[];const path=(pts,f)=>{const m=M(pts);if(st.collect)st.collect.push(...m);const d=smooth(m);if(style==='body'&&f==='var(--fig)'){OL.push(d);return `<path d="${d}" fill="var(--fig)"/>`}return `<path d="${d}" ${attr(f)}/>`};
-  const line=(pts,w=.8)=>style==='body'?`<path d="${smooth(M(pts),false)}" fill="none" stroke="var(--fig2)" stroke-width="${w*s}" stroke-linecap="round" opacity=".85"/>`:'';
-  const reg=(pts,c)=>`<path d="${smooth(M(pts))}" fill="${c}" opacity=".92"/>`;
-  const col=k=>st.mus&&st.mus[k]?(st.mus[k]==='p'?'var(--rope)':'var(--sec)'):null;
-  const tn=P0.n,flat=!!o.flat;
+/* hands, side view. Returns polygons (unscaled) plus detail lines and the prop the hand holds. */
+function handSide(P0,o,hk){const W=P0.W,hd=P0.hd,out={parts:[],lines:[]};
+ if(hk==='grip'){/* overhand on the bar, seen end-on: palm faces forward, fingers over the top, thumb under */
+  const fw=P0.n,q=(x,y)=>[W[0]+fw[0]*x+hd[0]*y,W[1]+fw[1]*x+hd[1]*y],c=[RB+1.7,9],pc=(a,r)=>q(c[0]+Math.cos(a*D2R)*r,c[1]+Math.sin(a*D2R)*r);
+  const band=(a0,a1,ri,ro,n=12)=>{const b=[];for(let i=0;i<=n;i++)b.push(pc(a0+(a1-a0)*i/n,ro));b.push(pc(a1+(a1>a0?7:-7),(ri+ro)/2));for(let i=n;i>=0;i--)b.push(pc(a0+(a1-a0)*i/n,ri));return b};
+  out.parts.push([q(-2.5,-1),q(2.5,-1),q(2.3,4.5),q(1.8,8.4),q(.8,11.2),q(-1,12.2),q(-2.5,9.6),q(-2.8,4.5)]);
+  out.parts.push(band(152,-50,RB+.1,RB+3.1));
+  out.parts.push(band(204,318,RB+.1,RB+2.4,8));
+  out.lines.push([pc(108,RB+3),pc(108,RB+.5)],[pc(40,RB+3),pc(40,RB+.5)]);
+  out.bar=q(c[0],c[1]);}
+ else if(hk==='flat'){/* push-up: hand flat on the floor, fingers forward */
+  const fx=o.fwd||Math.sign(P0.S[0]-P0.H[0])||1,q=(x,y)=>[W[0]+fx*x,W[1]+y];
+  out.parts.push([q(-2.6,-2.6),q(-3.1,1.2),q(-2.4,3.8),q(6,3.9),q(14.6,3.9),q(17,3.3),q(16.8,2),q(13,1.2),q(8.6,0),q(3.4,-2.1)]);
+  out.lines.push([q(9.6,.5),q(10,3.4)],[q(12.4,1),q(12.8,3.5)]);}
+ else if(hk==='flat0'){/* open hand continuing the forearm */
+  const pn=pp(hd),q=(x,y)=>[W[0]+pn[0]*x+hd[0]*y,W[1]+pn[1]*x+hd[1]*y];
+  out.parts.push([q(-2.4,-1),q(2.4,-1),q(2.8,5),q(2.3,11),q(1,15.4),q(-.6,15.6),q(-2,12),q(-2.6,5)]);}
+ else if(hk==='db'){/* fist around a dumbbell handle; the handle runs toward the viewer */
+  const pv=P0.pv,q=(x,y)=>[W[0]+pv[0]*x+hd[0]*y,W[1]+pv[1]*x+hd[1]*y];
+  out.parts.push([q(-2.6,-1),q(2.5,-1),q(3.3,3),q(4.3,5.4),q(4.5,8.6),q(3.3,10.6),q(.4,11.1),q(-2.1,10.4),q(-3,8),q(-2.9,4)]);
+  out.lines.push([q(4.3,6.2),q(2,6.4)],[q(4.3,8.3),q(2,8.4)],[q(3.1,10.3),q(1.4,9.9)]);
+  out.db=q(1.6,6.8);}
+ else {const pn=pp(hd),q=(x,y)=>[W[0]+pn[0]*x+hd[0]*y,W[1]+pn[1]*x+hd[1]*y];
+  out.parts.push([q(-2.6,-1),q(2.6,-1),q(3.2,6),q(1.5,9.5),q(-1.5,9.5),q(-3.2,6)]);}
+ return out}
+let MID=0;
+const OUTLINE={ghost:{c:'var(--ghost)',w:2.6,dash:'5 4',fo:.06},bad:{c:'var(--accent)',w:3,dash:'6 4',fo:.1}};
+/* dashed outline of a union of shapes: stroke every part, then mask away everything inside any part */
+function outlineSVG(ds,style){const k=OUTLINE[style],id='ol'+(++MID),P=ds.map(d=>`<path d="${d}"/>`).join('');
+ return `<mask id="${id}" maskUnits="userSpaceOnUse" x="-400" y="-400" width="1200" height="1200"><rect x="-400" y="-400" width="1200" height="1200" fill="#fff"/><g fill="#000">${P}</g></mask>
+  <g opacity="${k.fo}" fill="${k.c}">${P}</g><g mask="url(#${id})" fill="none" stroke="${k.c}" stroke-width="${k.w}" stroke-dasharray="${k.dash}" stroke-linejoin="round">${P}</g>`}
+const unionSVG=(ds,fill,edge,w)=>ds.length?`<g fill="${edge}" stroke="${edge}" stroke-width="${w}" stroke-linejoin="round">${ds.map(d=>`<path d="${d}"/>`).join('')}</g><g fill="${fill}">${ds.map(d=>`<path d="${d}"/>`).join('')}</g>`:'';
+const fillSVG=(ds,fill)=>`<g fill="${fill}">${ds.map(d=>`<path d="${d}"/>`).join('')}</g>`;
+const edgeSVG=(ds,edge,w)=>`<g fill="${edge}" stroke="${edge}" stroke-width="${w}" stroke-linejoin="round">${ds.map(d=>`<path d="${d}"/>`).join('')}</g>`;
+const linesSVG=(ls,M,s,c='var(--skin-line)',w=.9)=>ls.map(l=>`<path d="${smooth(M(l),false)}" fill="none" stroke="${c}" stroke-width="${w*s}" stroke-linecap="round"/>`).join('');
+function drawSide(o,st){
+  const P0=sidePose(o),M=v=>mapPts(v,o,P0),P=place(P0,o),s=o.sc||1,style=st.style||'body',body=style==='body';
+  const tn=P0.n,flat=!!o.flat,hk=o.hand||'grip';
   const uaN=innerN(P0.So,P0.E,P0.W,tn),faN=innerN(P0.E,P0.W,P0.So,tn);
-  const thHam=innerN(P0.H,P0.K,P0.A,[-tn[0],-tn[1]]),thN=[-thHam[0],-thHam[1]],shC=innerN(P0.K,P0.A,P0.H,thHam),shN=[-shC[0],-shC[1]];
+  const thHam=innerN(P0.H,P0.K,P0.A,neg(tn)),thN=neg(thHam),shC=innerN(P0.K,P0.A,P0.H,thHam),shN=neg(shC);
+  const delt=(()=>{const d=nz(sub(P0.E,P0.So)),nn=pp(d),c=ad(P0.So,d,3.2),r=[];for(let i=0;i<14;i++){const a=i/14*Math.PI*2;r.push(ad(ad(c,d,Math.cos(a)*7.8),nn,Math.sin(a)*6.9))}return r})();
+  const hand=handSide(P0,o,hk);
+  const neck=limbPts(ad(P0.S,P0.dt,-2),ad(P0.N,P0.up,3),{f:[[0,4.8],[1,4.1]],b:[[0,4.8],[1,4.1]]},tn);
+  const core=[torsoPts(P0.H,P0.S,tn,flat),neck,headPts(P0.N,P0.up,P0.face,o.noFace)];
+  const leg=[limbPts(P0.H,P0.K,PRO.th,thN),limbPts(P0.K,P0.A,PRO.sh,shN),footPts(P0.A,P0.fd)];
+  const arm=[delt,limbPts(P0.So,P0.E,PRO.ua,uaN),limbPts(P0.E,P0.W,PRO.fa,faN),...hand.parts];
+  const coll=(pts)=>{const m=M(pts);if(st.collect)st.collect.push(...m);if(st.polys)st.polys.push(m);return smooth(m)};
+  if(!body){const ds=[...core,...leg,...arm].map(coll);return {svg:outlineSVG(ds,style),P}}
+  const off=[2.6,-1.8],shift=v=>v.map(p=>[p[0]+off[0],p[1]+off[1]]);
+  const farD=o.noFar?[]:[...leg,...arm].map(x=>smooth(M(shift(x))));
+  const coreD=[...core,...leg].map(coll),armD=arm.map(coll),ew=2.3*s;
+  const col=k=>st.mus&&st.mus[k]?(st.mus[k]==='p'?'var(--mus-main)':'var(--mus-help)'):null;
   const segs={torso:{a:P0.H,b:P0.S,n:tn},ua:{a:P0.So,b:P0.E,n:uaN,P:PRO.ua},fa:{a:P0.E,b:P0.W,n:faN,P:PRO.fa},th:{a:P0.H,b:P0.K,n:thN,P:PRO.th}};
-  const musFor=seg=>{if(style!=='body'||!st.mus)return'';let g='';
+  const mus=seg=>{if(!st.mus)return'';let g='';
     for(const k in MREG_SIDE){const c=col(k);if(!c)continue;MREG_SIDE[k].forEach(r=>{if(r[0]!==seg)return;const S_=segs[seg];
-      const pts=seg==='torso'?torsoRegion(S_.a,S_.b,S_.n,r[1],r[2],r[3],r[4],r[5],flat,r[6]):limbRegion(S_.a,S_.b,S_.P,S_.n,r[1],r[2],r[3],r[4],r[5],r[6]);g+=reg(pts,c)})}return g};
-  const o_bar=!!o.barSide&&style==='body';const off=[2.2,-1.4];const fo=v=>v.map(p=>[p[0]+off[0],p[1]+off[1]]);
+      const pts=seg==='torso'?torsoRegion(S_.a,S_.b,S_.n,r[1],r[2],r[3],r[4],r[5],flat,r[6]):limbRegion(S_.a,S_.b,S_.P,S_.n,r[1],r[2],r[3],r[4],r[5],r[6]);
+      g+=`<path d="${smooth(M(pts))}" fill="${c}"/>`;
+      if(k==='abs'&&seg==='torso'){[.24,.38,.52].forEach(u=>{const a=ad(ad(P0.H,nz(sub(P0.S,P0.H)),u*LEN.t),tn,prof(TF,u)*.55),b=ad(ad(P0.H,nz(sub(P0.S,P0.H)),u*LEN.t),tn,prof(TF,u)*.9);g+=linesSVG([[a,b]],M,s,'rgba(0,0,0,.25)',.8)})}})}return g};
   let g='';
-  /* far leg + far arm */
-  const leg=(f,shift)=>{const z=shift?fo:x=>x;return path(z(limbPts(P0.K,P0.A,PRO.sh,shN)),f)+path(z(footPts(P0.A,P0.fd)),f)+path(z(limbPts(P0.H,P0.K,PRO.th,thN)),f)};
-  const hand=(f,shift)=>{const z=shift?fo:x=>x,hk=o.hand||'grip';
-    if(hk==='flat'){const fw=[Math.sign(P0.n[0]||1)*-1,0],fwd=o.handFwd||[1,0];const W=P0.W;return path(z([ad(W,[0,-1],3),ad(ad(W,fwd,8),[0,-1],3.2),ad(ad(W,fwd,17),[0,-1],1.4),ad(W,fwd,17.6),ad(W,fwd,2)]),f)}
-    const hd=dir(P0.ha),hn=pp(hd),G=P0.G;
-    if(hk==='flat0'){const W=P0.W;return path(z([ad(W,hn,3),ad(ad(W,hd,9),hn,3.6),ad(ad(W,hd,16),hn,1.6),ad(ad(W,hd,17),hn,-.6),ad(ad(W,hd,8),hn,-3),ad(W,hn,-3)]),f)}
-    if(hk==='grip'){const fw=P0.n,q=(x,y)=>[G[0]+fw[0]*x+hd[0]*y,G[1]+fw[1]*x+hd[1]*y],RB=2.6,r=RB+2;
-      if(shift)return '';
-      const W=P0.W,bx=-RB-2.1;
-      let o=path(z([ad(W,fw,2.7),q(bx+2.4,-RB-.4),q(bx+1.6,.6),q(bx-.2,RB*.9),q(bx-2.7,.4),ad(W,fw,-2.7)]),f);
-      if(style!=='body')return o+path(z([q(bx,RB),q(-1,RB+3.6),q(RB+2.6,RB+1.2),q(RB+3,-2),q(RB+.6,-1.4),q(0,-RB-2.6),q(bx+1,-RB-1)]),f);
-      if(o_bar)o+=`<circle cx="${M([G])[0][0]}" cy="${M([G])[0][1]}" r="${RB*s}" fill="var(--bar)"/>`;
-      const arc=(a0,a1,rad)=>{const pts=[];for(let i=0;i<=10;i++){const t=(a0+(a1-a0)*i/10)*D2R;pts.push(q(Math.cos(t)*rad,Math.sin(t)*rad))}return pts};
-      const stroke=(pts,w,c)=>{const m=M(pts),d=smooth(m,false);if(st.collect)st.collect.push(...m);return `<path d="${d}" fill="none" stroke="var(--fig2)" stroke-width="${(w+1.5)*s}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${c}" stroke-width="${w*s}" stroke-linecap="round"/>`};
-      o+=stroke(arc(150,-38,r),3.3,f);
-      o+=stroke(arc(212,318,RB+1.6),2.5,f);
-      return o}
-    return path(z([ad(ad(G,hd,-6.5),hn,3.4),ad(ad(G,hd,2),hn,5.2),ad(ad(G,hd,5.8),hn,2),ad(ad(G,hd,5.6),hn,-3),ad(ad(G,hd,1),hn,-5.4),ad(ad(G,hd,-6.5),hn,-3.2)]),f)};
-  const delt=()=>{const d=nz(sub(P0.E,P0.So)),nn=pp(d),c=ad(P0.So,d,3.2),o=[];for(let i=0;i<14;i++){const a=i/14*Math.PI*2;o.push(ad(ad(c,d,Math.cos(a)*7.6),nn,Math.sin(a)*6.7))}return o};
-  const arm=(f,shift,mus)=>{const z=shift?fo:x=>x;return path(z(limbPts(P0.E,P0.W,PRO.fa,faN)),f)+(mus?musFor('fa'):'')+hand(f,shift)+path(z(limbPts(P0.So,P0.E,PRO.ua,uaN)),f)+path(z(delt()),f)+(mus?musFor('ua'):'')};
-  if(!o.noFar){g+=leg(far,1);g+=arm(far,1,0)}
-  g+='@@OL@@';
-  if(o.dbPlate&&style==='body')g+=`<circle cx="${P.G[0]+off[0]}" cy="${P.G[1]+off[1]}" r="${6*s}" fill="var(--bar)"/>`;
-  /* torso, neck, head */
-  g+=path(torsoPts(P0.H,P0.S,tn,flat),fill)+musFor('torso');
-  {const d=nz(sub(P0.S,P0.H)),L=LEN.t,q=(u,v)=>ad(ad(P0.H,d,u*L),tn,v);g+=line([q(.7,5.5),q(.69,8.6),q(.74,9.6)])+line([q(.02,-4),q(-.05,-7.5),q(-.1,-9)])+line([q(.3,3),q(.42,5.6)],.6)}
-  const up=P0.up;
-  g+=path(limbPts(ad(P0.S,P0.dt,-2),ad(P0.N,up,3),{f:[[0,4.6],[1,4]],b:[[0,4.6],[1,4]]},tn),fill);
-  { const hp=(()=>{const hn=pp(up),C=ad(P0.N,up,9.6),q=(u,v)=>ad(ad(C,up,u),hn,v);
-      return !o.noFace?[q(10.6,0),q(8.6,5.6),q(4,8.4),q(1.2,8.7),q(-1.2,10.4),q(-3.2,9),q(-5.4,8.8),q(-7.2,8.4),q(-9.8,6),q(-10.2,3),q(-7.4,-1),q(-6.6,-5.6),q(-2,-9),q(4,-9),q(8.6,-6)]
-      :[q(10.4,0),q(7.4,7.2),q(0,9.2),q(-7.4,7.2),q(-10.4,0),q(-7.4,-7.2),q(0,-9.2),q(7.4,-7.2)]})();
-    g+=path(hp,fill);
-    if(style==='body'&&!o.noFace){const hn=pp(up),C=ad(P0.N,up,9.6),ear=M([ad(ad(C,up,-.6),hn,-1.4)])[0];g+=`<ellipse cx="${ear[0]}" cy="${ear[1]}" rx="${1.8*s}" ry="${2.6*s}" fill="var(--fig2)"/>`}}
-  g+=leg(fill,0);
-  /* redraw thigh muscles on top of near thigh */
-  g+=musFor('th');
-  if(o.dbPlate&&style==='body')g+=`<circle cx="${P.G[0]}" cy="${P.G[1]}" r="${6*s}" fill="var(--bar)"/><circle cx="${P.G[0]}" cy="${P.G[1]}" r="${2.2*s}" fill="var(--soft)" opacity=".5"/>`;
-  g+=arm(fill,0,1);
-  g=g.replace('@@OL@@',OL.length?`<g fill="var(--fig2)" stroke="var(--fig2)" stroke-width="${2.2*s}" stroke-linejoin="round">${OL.map(d=>`<path d="${d}"/>`).join('')}</g>`:'');
+  /* dumbbell: far plate sits behind the hand */
+  let dbBack='',dbFront='';
+  if(hand.db){const c=M([hand.db])[0],r=5.6*s,plate=(x,y,far)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${far?'var(--plate-far)':'var(--plate)'}" stroke="var(--skin-edge)" stroke-width="${.9*s}"/><circle cx="${x}" cy="${y}" r="${r*.62}" fill="none" stroke="var(--metal-hi)" stroke-width="${.7*s}" opacity=".35"/><circle cx="${x}" cy="${y}" r="${1.2*s}" fill="var(--metal)"/>`;
+    const fx=c[0]-2.8*s,fy=c[1]-3.4*s,nx=c[0]+3.6*s,ny=c[1]+4.4*s;
+    dbBack=plate(fx,fy,1)+`<path d="M${fx},${fy} L${nx},${ny}" stroke="var(--metal)" stroke-width="${2.4*s}" stroke-linecap="round"/>`;
+    dbFront=`<g opacity=".93">${plate(nx,ny,0)}</g>`;
+    if(st.collect)st.collect.push([nx+r,ny+r],[fx-r,fy-r]);if(st.polys){const ring=(x,y)=>Array.from({length:12},(_,i)=>[x+Math.cos(i/12*Math.PI*2)*r,y+Math.sin(i/12*Math.PI*2)*r]);st.polys.push(ring(fx,fy),ring(nx,ny))}}
+  if(farD.length)g+=unionSVG(farD,'var(--skin-far)','var(--skin-edge)',ew);
+  g+=dbBack;
+  g+=edgeSVG([...coreD,...armD],'var(--skin-edge)',ew);
+  g+=fillSVG(coreD,'var(--skin)')+mus('torso')+mus('th');
+  if(!o.noFace){const C=ad(P0.N,P0.up,9.8),ear=M([ad(ad(C,P0.up,-.8),P0.face,-1.8)])[0],ang=Math.atan2(P0.up[1],P0.up[0])/D2R+90;
+    g+=`<ellipse cx="${ear[0]}" cy="${ear[1]}" rx="${1.7*s}" ry="${2.7*s}" fill="var(--skin-line)" transform="rotate(${ang} ${ear[0]} ${ear[1]})"/>`}
+  g+=edgeSVG(armD,'var(--skin-line)',1.4*s)+fillSVG(armD,'var(--skin)')+mus('ua')+mus('fa')+linesSVG(hand.lines,M,s);
+  if(hand.bar&&o.barSide){const c=M([hand.bar])[0],r=RB*s;g+=`<circle cx="${c[0]}" cy="${c[1]}" r="${r}" fill="var(--metal)" stroke="var(--skin-edge)" stroke-width="${.8*s}"/><circle cx="${c[0]-r*.35}" cy="${c[1]-r*.35}" r="${r*.32}" fill="var(--metal-hi)" opacity=".45"/>`}
+  g+=dbFront;
   return {svg:g,P}}
 
+
+/* ---------- head-end view for side-lying shoulder work: you look along the body from above the head,
+   so the forearm turns in the plane of the picture and "just above elbow height" is visible ---------- */
+function endPose(o){const lift=o.lift||0,E=[6.5+lift*.4,-33-lift],th=(o.er??20)*D2R,d=[Math.sin(th),Math.cos(th)],W=ad(E,d,LEN.fa),G=ad(W,d,4.2);
+ return {So:[1,-40],E,W,G,H:[0,-22],Hd:[1.5,-16.5],d}}
+function drawEnd(o,st){const P0=endPose(o),M=v=>mapPts(v,o,P0),P=place(P0,o),s=o.sc||1,style=st.style||'body';
+ const circ=(c,rx,ry,n=20)=>Array.from({length:n},(_,i)=>[c[0]+Math.cos(i/n*Math.PI*2)*rx,c[1]+Math.sin(i/n*Math.PI*2)*ry]);
+ const torso=[[-9,-1.6],[8,-1.6],[11.4,-9],[12.4,-22],[11,-33],[7.4,-41.6],[1,-45.4],[-7.6,-43],[-12.4,-35],[-13.2,-22],[-11.8,-9]];
+ const head=circ(P0.Hd,10.2,10.6),nose=[[10.6,-19],[13.2,-16.8],[10.8,-14]];
+ const ua=limbPts([1.5,-40.5],P0.E,{f:[[0,6.6],[1,4.6]],b:[[0,6.6],[1,4.6]]},[1,0]);
+ const fa=limbPts(P0.E,P0.W,PRO.fa,pp(P0.d)),fist=circ(ad(P0.W,P0.d,3.6),4.4,4.4,14);
+ const coll=pts=>{const m=M(pts);if(st.collect)st.collect.push(...m);if(st.polys)st.polys.push(m);return smooth(m)};
+ const coreD=[torso].map(coll),headD=[head,nose].map(coll),armD=[ua,fa,fist].map(coll);
+ if(style!=='body')return {svg:outlineSVG([...coreD,...headD,...armD],style),P};
+ const col=k=>st.mus&&st.mus[k]?(st.mus[k]==='p'?'var(--mus-main)':'var(--mus-help)'):null;
+ const pil=M([[-13,-6.4],[13,0]]),g0=`<rect x="${pil[0][0]}" y="${pil[0][1]}" width="${pil[1][0]-pil[0][0]}" height="${pil[1][1]-pil[0][1]}" rx="${3*s}" fill="var(--line-strong)"/>`;
+ const c=M([P0.G])[0],r=5.8*s;
+ let g=g0+edgeSVG([...coreD,...headD,...armD],'var(--skin-edge)',2.3*s)+fillSVG(coreD,'var(--skin)');
+ if(col('rotator'))g+=`<path d="${smooth(M([[-11.6,-33],[-7,-42],[-2,-44],[-3,-37],[-8,-29]]))}" fill="${col('rotator')}"/>`;
+ g+=edgeSVG(headD,'var(--skin-line)',1.4*s)+fillSVG(headD,'var(--skin)');
+ {const hc=M([P0.Hd])[0];g+=`<path d="${smooth(M([[-7.6,-23],[-2,-26.6],[5,-26],[9.4,-21.4],[4,-22.6],[-3,-22.4]]))}" fill="var(--skin-line)" opacity=".55"/><ellipse cx="${hc[0]-.4*s}" cy="${hc[1]+9.6*s}" rx="${2.6*s}" ry="${1.4*s}" fill="var(--skin-line)"/>`}
+ g+=`<circle cx="${c[0]}" cy="${c[1]}" r="${r}" fill="var(--plate-far)" stroke="var(--skin-edge)" stroke-width="${.9*s}"/><circle cx="${c[0]}" cy="${c[1]}" r="${r*.6}" fill="none" stroke="var(--metal-hi)" stroke-width="${.7*s}" opacity=".35"/>`;
+ g+=edgeSVG(armD,'var(--skin-line)',1.4*s)+fillSVG(armD,'var(--skin)');
+ if(col('reard'))g+=`<path d="${smooth(M(limbRegion([1.5,-40.5],P0.E,{f:[[0,6.6],[1,4.6]],b:[[0,6.6],[1,4.6]]},[1,0],0,.8,'b',0,1)))}" fill="${col('reard')}"/>`;
+ g+=linesSVG([[ad(ad(P0.W,P0.d,2),pp(P0.d),3.8),ad(ad(P0.W,P0.d,5.8),pp(P0.d),2.6)]],M,s);
+ return {svg:g,P}}
+
 /* ---------- front / back view ---------- */
+const TS=LEN.t/50;
 function frontPose(o){const e=o.elev||0,P={};
-  P.S=[0,e];P.H=[0,50+e];P.N=[0,-6+e];P.C=[0,-16+e];
-  [-1,1].forEach(s=>{const k=s<0?'L':'R',sj=[s*17,4],E=[sj[0]+s*Math.sin(o.ua*D2R)*LEN.ua,sj[1]+Math.cos(o.ua*D2R)*LEN.ua],
-    W=[E[0]+s*Math.sin(o.fa*D2R)*LEN.fa,E[1]+Math.cos(o.fa*D2R)*LEN.fa],G=[W[0]+s*Math.sin(o.fa*D2R)*6.5,W[1]+Math.cos(o.fa*D2R)*6.5],
-    hp=[s*8.5,50+e],K=[hp[0]+s*Math.sin((o.th||3)*D2R)*LEN.th,hp[1]+Math.cos((o.th||3)*D2R)*LEN.th],A=[K[0]+s*.5,K[1]+LEN.sh];
+  P.S=[0,e];P.H=[0,LEN.t+e];P.N=[0,-LEN.nk+e];P.Ch=[0,-LEN.nk-3+e];
+  [-1,1].forEach(s=>{const k=s<0?'L':'R',sj=[s*17,4];let E,W,G;
+    if(o.wy!=null){W=[s*(17+(o.wx??12)),4-o.wy];E=ik(sj,W,LEN.ua,LEN.fa,c=>s*c[0]+c[1]*.2);W=ad(E,nz(sub(W,E)),LEN.fa);G=[W[0],W[1]-6.8]}
+    else{E=[sj[0]+s*Math.sin(o.ua*D2R)*LEN.ua,sj[1]+Math.cos(o.ua*D2R)*LEN.ua];W=[E[0]+s*Math.sin(o.fa*D2R)*LEN.fa,E[1]+Math.cos(o.fa*D2R)*LEN.fa];G=[W[0]+s*Math.sin(o.fa*D2R)*6.8,W[1]+Math.cos(o.fa*D2R)*6.8]}
+    const
+    hp=[s*8.8,LEN.t+e],th=o.th??3,K=[hp[0]+s*Math.sin(th*D2R)*LEN.th,hp[1]+Math.cos(th*D2R)*LEN.th],A=[K[0]+s*.6,K[1]+LEN.sh];
     Object.assign(P,{['S'+k]:sj,['E'+k]:E,['W'+k]:W,['G'+k]:G,['Hp'+k]:hp,['K'+k]:K,['A'+k]:A})});
   P.G=[(P.GL[0]+P.GR[0])/2,(P.GL[1]+P.GR[1])/2];return P}
 const FRONT_MUS={
- front:{pecs:s=>[[s*2,9],[s*13.5,8],[s*15.5,16],[s*10,21],[s*2,20]],abs:s=>[[23.5,29],[30.5,36],[37.5,43.5]].map(([y0,y1])=>[[s*.9,y0],[s*5.2,y0+.4],[s*5.4,y1],[s*.9,y1+.3]]).concat([[[s*.9,45],[s*4.6,45],[s*3.4,51],[s*.9,52]]]),obl:s=>[[s*6.5,25],[s*13.4,27],[s*13.2,41],[s*7.5,45]],
-   lats:s=>[[s*14.6,13],[s*16.4,17],[s*13.6,30],[s*12.4,27]],serratus:s=>[[s*12,21],[s*14.4,22],[s*13.6,28],[s*11.6,27]],hip:s=>[[s*6,46],[s*12.5,47],[s*9,55],[s*5,52]]},
- back:{traps:s=>s>0?[[-5,-3],[5,-3],[15,3],[9,11],[0,33],[-9,11],[-15,3]]:null,rotator:s=>[[s*8,9],[s*14.5,9.5],[s*13.5,17],[s*8.5,15.5]],
-   lats:s=>[[s*9.5,16],[s*15.8,15],[s*14,30],[s*6.5,42],[s*3,40]],lowback:s=>[[s*1.2,34],[s*5.5,34],[s*5.5,47],[s*1.2,47]],glutes:s=>[[s*1,48],[s*13,48],[s*13.5,60],[s*1,61]]}};
-function drawFront(o,st){const P0=frontPose(o),M=v=>mapPts(v,o,P0),P=place(P0,o),s=o.sc||1,style=st.style||'body',back=o.back;
-  const fill=style==='body'?'var(--fig)':style==='bad'?'var(--rope)':'none',stroke=style==='body'?'var(--fig2)':style==='bad'?'var(--rope)':'var(--mute)';
-  const attr=style==='body'?`fill="var(--fig)" stroke="var(--fig2)" stroke-width=".7" stroke-linejoin="round"`:style==='bad'?`fill="var(--rope)" fill-opacity=".07" stroke="var(--rope)" stroke-width="1.3" stroke-dasharray="4 3"`:`fill="none" stroke="var(--mute)" stroke-width="1.1" stroke-dasharray="3 3" opacity=".8"`;
-  const OL=[];const path=pts=>{const m=M(pts);if(st.collect)st.collect.push(...m);const d=smooth(m);if(style==='body'){OL.push(d);return `<path d="${d}" fill="var(--fig)"/>`}return `<path d="${d}" ${attr}/>`};
-  const line=(pts,w=.8)=>style==='body'?`<path d="${smooth(M(pts),false)}" fill="none" stroke="var(--fig2)" stroke-width="${w*s}" stroke-linecap="round" opacity=".85"/>`:'';
-  const col=k=>st.mus&&st.mus[k]?(st.mus[k]==='p'?'var(--rope)':'var(--sec)'):null;
-  const reg=(pts,c)=>`<path d="${smooth(M(pts))}" fill="${c}" opacity=".92"/>`;
-  const e=o.elev||0,T=v=>[v[0],v[1]+e];
-  const SYM=[[5.4,-2],[11.5,.6],[16.2,3.4],[16.6,9],[15.6,15],[15.6,21],[14.2,30],[12.2,38],[14.2,46],[15.2,53],[9,56.5],[0,56]];
-  const torso=[...SYM.map(([x,y])=>T([x,y])),...SYM.slice().reverse().map(([x,y])=>T([-x,y]))];
-  let g='';
+ front:{pecs:s=>[[s*1.6,8.6],[s*8,6.6],[s*14.2,8],[s*15.8,14],[s*12,20.4],[s*5,21.4],[s*1.6,20]],
+   abs:s=>[[23.5,29],[30.5,36],[37.5,43.5]].map(([y0,y1])=>[[s*.9,y0],[s*5.2,y0+.4],[s*5.4,y1],[s*.9,y1+.3]]).concat([[[s*.9,45],[s*4.6,45],[s*3.4,51],[s*.9,52]]]),
+   obl:s=>[[s*6.6,25],[s*13.4,27],[s*12.8,38],[s*12.6,42],[s*7.6,45]],
+   lats:s=>[[s*14.6,13],[s*16.2,17],[s*13.8,29],[s*12.6,26]],serratus:s=>[[s*11.8,21],[s*14.6,22],[s*13.8,28],[s*11.6,27]],hip:s=>[[s*6,46],[s*12.5,47],[s*9,55],[s*5,52]]},
+ back:{traps:s=>s>0?[[-5.6,-3],[5.6,-3],[16,3.4],[9,11],[0,33],[-9,11],[-16,3.4]]:null,rotator:s=>[[s*7.6,8.6],[s*14.6,9],[s*13.8,17],[s*8.4,15.6]],
+   lats:s=>[[s*9.6,16],[s*15.8,15],[s*14.4,24],[s*12.6,32],[s*6.6,42],[s*2.6,40],[s*5,28]],lowback:s=>[[s*1.2,33],[s*5.2,34],[s*5.6,47],[s*1.2,47]],glutes:s=>[[s*1,48],[s*12.8,48.4],[s*14,56],[s*9,60.4],[s*1,60]]}};
+/* hands on the bar. Front (you face the climber): palm behind the bar, fingertips drape over the front, thumb hooks under.
+   Back (you are behind): back of the hand, knuckles along the top of the bar. */
+function handFront(P0,k,back){const sg=k==='L'?-1:1,G=P0['G'+k],W=P0['W'+k],by=G[1],X=x=>G[0]+sg*x;
+ const wristN=nz(pp(sub(G,W))),wo=dot(wristN,[sg,0])>=0?wristN:neg(wristN);
+ const r={palm:[],fingers:[],lines:[]};
+ if(back){r.palm.push([ad(W,wo,-3.3),ad(W,wo,3.3),[X(4.4),by+RB+1.2],[X(4.6),by-RB-.6],[X(3.8),by-RB-2.6],[X(1.2),by-RB-3],[X(-1.4),by-RB-3],[X(-3.9),by-RB-2.4],[X(-4.4),by-RB-.4],[X(-4.2),by+RB+1.4]]);
+   for(let i=0;i<4;i++){const x=X(-2.9+i*2.1);r.lines.push([[x,by-RB-2.4],[x+sg*.2,by+RB-.2]])}
+   r.lines.push([[X(-4),by+RB+.8],[X(-2.2),by+RB+2.4]]);return r}
+ r.palm.push([ad(W,wo,-3.3),ad(W,wo,3.3),[X(4.2),by+RB+1.6],[X(4.4),by-RB-1.2],[X(-4.2),by-RB-1.2],[X(-4.1),by+RB+1.6]]);
+ const len=[2.9,3.4,3.1,2.3];
+ for(let i=0;i<4;i++){const xc=X(-3.15+2.1*i),L=len[i];r.fingers.push([[xc-1.02,by-RB-1.9],[xc+1.02,by-RB-1.9],[xc+1.06,by-RB+L],[xc,by-RB+L+1.1],[xc-1.06,by-RB+L]])}
+ r.fingers.push([[X(-3.4),by+RB+3.8],[X(-4.9),by+RB+1.8],[X(-3.8),by+RB-.2],[X(-1.2),by+RB-.6],[X(-.2),by+RB+.8],[X(-1.2),by+RB+2]]);
+ return r}
+function drawFront(o,st){const P0=frontPose(o),M=v=>mapPts(v,o,P0),P=place(P0,o),s=o.sc||1,style=st.style||'body',back=!!o.back,body=style==='body';
+  const e=o.elev||0,T=v=>[v[0],v[1]*TS+e];
+  const SYM=[[5.4,-2],[11.5,.6],[16.2,3.4],[16.6,9],[15.6,15],[15.6,21],[14.2,30],[12.4,38],[14.2,46],[15.2,53],[9,56.5],[0,56]];
+  const torso=[...SYM.map(T),...SYM.slice().reverse().map(([x,y])=>T([-x,y]))];
+  const legs=[],arms=[],palms=[],fingers=[],lines=[];
   ['L','R'].forEach(k=>{const sg=k==='L'?-1:1,hp=P0['Hp'+k],K=P0['K'+k],A=P0['A'+k];
-    g+=path(limbPts(hp,K,PRO.th,[sg,0]))+path(limbPts(K,A,{f:[[0,5],[.3,5.4],[.6,4],[1,3]],b:[[0,5],[.3,5],[.6,3.8],[1,3]]},[sg,0]));
-    g+=path([[A[0]-sg*2,A[1]-1],[A[0]+sg*4,A[1]+1],[A[0]+sg*5.4,A[1]+5],[A[0]+sg*1,A[1]+6.2],[A[0]-sg*3,A[1]+4]]);
-    if(style==='body'&&col('quads')&&!back)g+=reg(limbRegion(hp,K,PRO.th,[sg,0],.1,.9,'f',0,1),col('quads'))+reg(limbRegion(hp,K,PRO.th,[sg,0],.1,.9,'b',0,.6),col('quads'))});
-  g+=path(torso);
-  if(!back)g+=line([T([-11,4]),T([-2,6])],.7)+line([T([11,4]),T([2,6])],.7)+line([T([-14.5,17]),T([-8,21]),T([-1,20])],.7)+line([T([14.5,17]),T([8,21]),T([1,20])],.7)+line([T([0,22]),T([0,44])],.6)+(style==='body'?`<circle cx="${M([T([0,38])])[0][0]}" cy="${M([T([0,38])])[0][1]}" r="${.9*s}" fill="var(--fig2)"/>`:'');
-  else g+=line([T([0,0]),T([0,46])],.7)+line([T([-4,9]),T([-11,8]),T([-10,19]),T([-5,20])],.6)+line([T([4,9]),T([11,8]),T([10,19]),T([5,20])],.6)+line([T([-10,50]),T([0,52]),T([10,50])],.6);
-  if(style==='body'&&st.mus){const set=FRONT_MUS[back?'back':'front'];for(const m in set){const c=col(m);if(!c)continue;[-1,1].forEach(sg=>{const r=set[m](sg);if(!r)return;(Array.isArray(r[0][0])?r:[r]).forEach(pl=>{g+=reg(pl.map(T),c)})})}}
-  /* neck + head */
-  g+=path([T([-4.6,-1]),T([-4.4,-9]),T([4.4,-9]),T([4.6,-1])]);
-  const C=T([0,-17]);const hp=[];for(let i=0;i<16;i++){const a=i/16*Math.PI*2;hp.push([C[0]+Math.sin(a)*8.4*(a>Math.PI*.6&&a<Math.PI*1.4?.86:1),C[1]-Math.cos(a)*10.4])}
-  g+=path(hp);
-  if(style==='body'){const ea=[[C[0]-8.6,C[1]+.5],[C[0]+8.6,C[1]+.5]];ea.forEach(p=>{const q=M([p])[0];g+=`<ellipse cx="${q[0]}" cy="${q[1]}" rx="${1.6*s}" ry="${2.8*s}" fill="var(--fig2)"/>`})}
-  /* hands on the bar. Front: bar in front of palm, fingers drape over the top toward you, thumb tip under. Back: back of hand, knuckles on top. */
-  const RB=2.6;
-  const handF=(G,W,sg)=>{const fd=nz(sub(G,W)),fn=pp(fd),Gb=[G[0],G[1]];let o='';
-    if(style!=='body')return path([ad(ad(G,fd,-7),fn,3.6),ad(ad(G,fd,1),fn,4.4),ad(ad(G,fd,RB+3),fn,3.4),ad(ad(G,fd,RB+3),fn,-3.4),ad(ad(G,fd,1),fn,-4.4),ad(ad(G,fd,-7),fn,-3.6)]);
-    if(back){o+=path([ad(W,fn,3.4),ad(ad(W,[0,-1],4),fn,4.3),[Gb[0]+4.4,Gb[1]-RB-1.2],[Gb[0]+3.4,Gb[1]-RB-3.6],[Gb[0]-3.4,Gb[1]-RB-3.6],[Gb[0]-4.4,Gb[1]-RB-1.2],ad(ad(W,[0,-1],4),fn,-4.3),ad(W,fn,-3.4)]);
-      for(let i=0;i<4;i++){const x=Gb[0]-3.3+i*2.2;o+=line([[x,Gb[1]-RB-3.2],[x,Gb[1]-RB+.6]],.6)}return o}
-    o+=path([ad(W,fn,3.4),ad(ad(W,[0,-1],4),fn,4.2),[Gb[0]+4.2,Gb[1]],[Gb[0]-4.2,Gb[1]],ad(ad(W,[0,-1],4),fn,-4.2),ad(W,fn,-3.4)]);
-    const a=M([[Gb[0]-5.4,Gb[1]]])[0],b=M([[Gb[0]+5.4,Gb[1]]])[0];o+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="var(--bar)" stroke-width="${RB*2*s}"/>`;
-    for(let i=0;i<4;i++){const x=Gb[0]-3.3+i*2.2,len=i===0||i===3?3.4:4.2;o+=path([[x-1.05,Gb[1]-RB-1.3],[x+1.05,Gb[1]-RB-1.3],[x+1.1,Gb[1]-RB+len],[x,Gb[1]-RB+len+.9],[x-1.1,Gb[1]-RB+len]])}
-    o+=path([[Gb[0]-sg*4.6,Gb[1]+RB-.2],[Gb[0]-sg*1.2,Gb[1]+RB+.4],[Gb[0]-sg*.6,Gb[1]+RB+2.4],[Gb[0]-sg*3.8,Gb[1]+RB+2.8]]);
-    return o};
-  ['L','R'].forEach(k=>{const sg=k==='L'?-1:1,S_=P0['S'+k],E=P0['E'+k],W=P0['W'+k],G=P0['G'+k];
-    const inN=nz(pp(sub(E,S_)));const inner=dot(inN,[-sg,0])>=0?inN:[-inN[0],-inN[1]];
-    g+=path(limbPts(E,W,PRO.fa,inner));
-    if(style==='body'){const c=col(back?'fext':'fflex');if(c)g+=reg(limbRegion(E,W,PRO.fa,inner,.04,.75,'f',-1,1),c)}
-    g+=path(limbPts(S_,E,PRO.ua,inner));{const d=nz(sub(E,S_)),nn=pp(d),c=ad(S_,d,3),o=[];for(let i=0;i<14;i++){const a=i/14*Math.PI*2;o.push(ad(ad(c,d,Math.cos(a)*7.4),nn,Math.sin(a)*6.6))}g+=path(o)}
-    if(style==='body'){const cb=col(back?'triceps':'biceps');if(cb)g+=reg(limbRegion(S_,E,PRO.ua,inner,.25,.88,back?'b':'f',0,1),cb);
-      const cd=col(back?'reard':'frontd');if(cd)g+=reg(limbRegion(S_,E,PRO.ua,inner,0,.3,'f',-1.05,1.05),cd)}
-    /* fist on bar (front: fingers curl over toward viewer; back: back of hand) */
-    g+=handF(G,W,sg);});
-  g=`<g fill="var(--fig2)" stroke="var(--fig2)" stroke-width="${2.2*s}" stroke-linejoin="round">${OL.map(d=>`<path d="${d}"/>`).join('')}</g>`+g;
+    legs.push(limbPts(hp,K,PRO.th,[sg,0]),limbPts(K,A,{f:[[0,5],[.3,5.5],[.6,4],[1,3]],b:[[0,5],[.3,5.1],[.6,3.8],[1,3]]},[sg,0]),
+     [[A[0]-sg*2.6,A[1]-1.4],[A[0]+sg*3.6,A[1]-.6],[A[0]+sg*5.4,A[1]+4.6],[A[0]+sg*3.6,A[1]+6.6],[A[0]-sg*.6,A[1]+6.6],[A[0]-sg*3.2,A[1]+4.2]]);
+    const S_=P0['S'+k],E=P0['E'+k],W=P0['W'+k];const inN=nz(pp(sub(E,S_))),inner=dot(inN,[-sg,0])>=0?inN:neg(inN);
+    const d=nz(sub(E,S_)),nn=pp(d),c=ad(S_,d,3),dl=[];for(let i=0;i<14;i++){const a=i/14*Math.PI*2;dl.push(ad(ad(c,d,Math.cos(a)*7.6),nn,Math.sin(a)*6.8))}
+    arms.push({k,sg,S_,E,W,inner,parts:[dl,limbPts(S_,E,PRO.ua,inner),limbPts(E,W,PRO.fa,inner)]});
+    const h=handFront(P0,k,back);palms.push(...h.palm);fingers.push(...h.fingers);lines.push(...h.lines)});
+  const neck=[T([-4.8,-1]),T([-4.5,-9]),T([4.5,-9]),T([4.8,-1])].map(([x,y])=>[x,y]);
+  const C=[0,-LEN.nk-10+e],head=[];for(let i=0;i<20;i++){const a=i/20*Math.PI*2,lo=Math.cos(a)<0;head.push([C[0]+Math.sin(a)*8.4*(lo?.84+.16*(1+Math.cos(a)):1),C[1]-Math.cos(a)*10.4])}
+  const coll=(pts)=>{const m=M(pts);if(st.collect)st.collect.push(...m);if(st.polys)st.polys.push(m);return smooth(m)};
+  const coreD=[...legs,torso,neck,head].map(coll),armD=[...arms.flatMap(a=>a.parts),...palms].map(coll),fingD=fingers.map(coll);
+  if(!body)return {svg:outlineSVG([...coreD,...armD,...fingD],style),P};
+  const col=k=>st.mus&&st.mus[k]?(st.mus[k]==='p'?'var(--mus-main)':'var(--mus-help)'):null;
+  const reg=(pts,c)=>`<path d="${smooth(M(pts))}" fill="${c}"/>`;
+  const ew=2.3*s;let g='';
+  const bar=()=>{const x0=Math.max(4,Math.min(P.GL[0],P.GR[0])-74*s),x1=Math.min(356,Math.max(P.GL[0],P.GR[0])+74*s),y=P.G[1];
+    return `<line x1="${x0}" x2="${x1}" y1="${y}" y2="${y}" stroke="var(--skin-edge)" stroke-width="${(RB*2+1.4)*s}" stroke-linecap="round"/><line x1="${x0}" x2="${x1}" y1="${y}" y2="${y}" stroke="var(--metal)" stroke-width="${RB*2*s}" stroke-linecap="round"/><line x1="${x0+2}" x2="${x1-2}" y1="${y-RB*.45*s}" y2="${y-RB*.45*s}" stroke="var(--metal-hi)" stroke-width="${.8*s}" opacity=".45" stroke-linecap="round"/>`};
+  if(o.barFront&&back)g+=bar();
+  g+=edgeSVG([...coreD,...armD],'var(--skin-edge)',ew)+fillSVG(coreD,'var(--skin)');
+  /* body detail lines + muscles */
+  const L=(pts,w=.8)=>linesSVG([pts.map(T)],M,s,'var(--skin-line)',w);
+  if(!back)g+=L([[-12,4],[-2,6.2]])+L([[12,4],[2,6.2]])+L([[-14.6,17],[-8,21],[-1,20.4]],.7)+L([[14.6,17],[8,21],[1,20.4]],.7)+L([[0,23],[0,44]],.6)+`<circle cx="${M([T([0,39])])[0][0]}" cy="${M([T([0,39])])[0][1]}" r="${.9*s}" fill="var(--skin-line)"/>`;
+  else g+=L([[0,0],[0,47]],.7)+L([[-4,9],[-11,8],[-10.4,19],[-5,20.4]],.6)+L([[4,9],[11,8],[10.4,19],[5,20.4]],.6)+L([[-10,51],[0,53],[10,51]],.6);
+  if(st.mus){const set=FRONT_MUS[back?'back':'front'];for(const m in set){const c=col(m);if(!c)continue;[-1,1].forEach(sg=>{const r=set[m](sg);if(!r)return;(Array.isArray(r[0][0])?r:[r]).forEach(pl=>{g+=reg(pl.map(T),c)})})}
+    if(!back&&col('quads'))['L','R'].forEach(k=>{const sg=k==='L'?-1:1;g+=reg(limbRegion(P0['Hp'+k],P0['K'+k],PRO.th,[sg,0],.12,.9,'f',0,.95),col('quads'))+reg(limbRegion(P0['Hp'+k],P0['K'+k],PRO.th,[sg,0],.12,.9,'b',0,.7),col('quads'))})}
+  {const ea=[[C[0]-8.5,C[1]+.6],[C[0]+8.5,C[1]+.6]];ea.forEach(p=>{const q=M([p])[0];g+=`<ellipse cx="${q[0]}" cy="${q[1]}" rx="${1.6*s}" ry="${2.8*s}" fill="var(--skin-line)"/>`})}
+  g+=edgeSVG(armD,'var(--skin-line)',1.4*s)+fillSVG(armD,'var(--skin)');
+  if(st.mus)arms.forEach(a=>{const cb=col(back?'triceps':'biceps');if(cb)g+=reg(limbRegion(a.S_,a.E,PRO.ua,a.inner,.26,.88,back?'b':'f',0,1),cb)+reg(limbRegion(a.S_,a.E,PRO.ua,a.inner,.3,.85,back?'f':'b',0,.55),cb);
+    const cd=col(back?'reard':'frontd');if(cd)g+=reg(limbRegion(a.S_,a.E,PRO.ua,a.inner,-.04,.3,'f',-1.05,1.05,'rfan'),cd);
+    const cf=col(back?'fext':'fflex');if(cf)g+=reg(limbRegion(a.E,a.W,PRO.fa,a.inner,.04,.72,'f',-1,1),cf)});
+  if(o.barFront&&!back)g+=bar();
+  if(fingD.length)g+=edgeSVG(fingD,'var(--skin-edge)',1.3*s)+fillSVG(fingD,'var(--skin)');
+  g+=linesSVG(lines,M,s);
   return {svg:g,P}}
 
 /* ---------- exercise library (form references: ACE/ExRx/clinical PT handouts, coaching sources) ---------- */
-const HANGp={to:180,ht:-8,ua:180,fa:180,th:7,sh:0,ft:40,hand:'grip'};
+/* bar poses use IK: wy/wx = wrist height/forward offset from the shoulder joint, so hands stay on the bar through the rep */
+const HANGp={to:180,ht:-8,wy:56.6,wx:3,th:7,sh:0,ft:40,hand:'grip'};
 const PASSIVEp={...HANGp,elev:5};
-const TOPp={...HANGp,to:186,ua:16,fa:172,th:14,sh:4,ht:-6};
-const MIDp={...HANGp,to:183,ua:60,fa:168,th:10,sh:2};
-const FHANG={ua:171,fa:171,th:3},FTOP={ua:50,fa:208,th:3},FPASS={...FHANG,elev:5},FMID={ua:90,fa:200,th:3};
+const TOPp={...HANGp,to:186,wy:-3,wx:9,th:14,sh:4,ht:-6};
+const MIDp={...HANGp,to:183,wy:12,wx:7,th:10,sh:2};
+const FHANG={wy:55.4,wx:12,th:3},FTOP={wy:5.4,wx:12,th:3},FPASS={...FHANG,elev:5},FMID={wy:17,wx:12,th:3};
 const BAR_SIDE={props:'barSide',anchor:'G',H:300};
 const BAR_FRONT={props:'barFront',anchor:'G',H:300};
 const EXD={
  'Negative pull-ups':{type:'bar',views:{side:{a:TOPp,b:HANGp,...BAR_SIDE},front:{a:FTOP,b:FHANG,...BAR_FRONT},back:{a:{...FTOP,back:1},b:{...FHANG,back:1},...BAR_FRONT}},
-  caps:['Start: chin over the bar','Lower slowly (5 sec) to straight arms'],trace:'N',
+  caps:['Start: chin over the bar','Lower slowly (5 sec) to straight arms'],trace:'N',arrow:'straight',
   cues:[['a','N','Chin over the bar'],['a','E','Elbows down & back'],['b','E','Finish with straight arms'],['both','A','Legs together, slightly forward'],['b','So','Shoulders stay engaged']],
-  mistake:{pose:{...HANGp,to:168,th:55,sh:-40,ft:10},front:{...FMID,ua:110,fa:205},text:'Kicking, swinging or dropping fast'},
+  mistake:{pose:{...HANGp,to:170,wy:30,wx:4,th:58,sh:-38,ft:10},text:'Kicking, swinging or dropping fast'},
   steps:['Step up on a chair (or jump) so your chin is above the bar, hands one fist-width outside your shoulders, palms away.','Squeeze your shoulder blades down and back, legs together and slightly in front of you.','Lower yourself as slowly as you can: aim for a 5-second count.','Stop at straight arms with shoulders still engaged, step back up, repeat.'],
   mistakes:['Dropping the last half of the rep: control it all the way down.','Kicking or swinging to get up: use the chair instead.','Letting shoulders shrug up to your ears at the bottom.']},
  'Pull-up singles':{type:'bar',views:{front:{a:FHANG,b:FTOP,...BAR_FRONT},side:{a:HANGp,b:TOPp,...BAR_SIDE},back:{a:{...FHANG,back:1},b:{...FTOP,back:1},...BAR_FRONT}},
-  caps:['Start: still, straight-arm hang','Pull until your chin clears the bar'],trace:'N',
+  caps:['Start: still, straight-arm hang','Pull until your chin clears the bar'],trace:'N',arrow:'straight',
   cues:[['a','GL','Hands 1 fist outside shoulders'],['a','SR','Shoulders down first'],['b','ER','Elbows drive down to your sides'],['b','N','Chin clears the bar, neck neutral']],
-  mistake:{pose:{...FTOP,ua:70,fa:200,th:30},side:{...TOPp,ht:42,ua:36,fa:170,th:48,sh:-42},text:'Craning the neck or kicking to reach the bar'},
+  mistake:{pose:{...TOPp,ht:44,wy:-1,th:50,sh:-40},text:'Craning the neck or kicking to reach the bar'},
   steps:['Hang still with hands one fist-width outside your shoulders, palms away, thumbs wrapped.','Pull your shoulders down away from your ears before you bend your arms.','Drive your elbows down toward your back pockets until your chin clears the bar.','Lower under control. Rest 2 minutes between singles.'],
   mistakes:['Craning your neck to “reach” the bar: the chin should clear it, not stretch to it.','Kipping or swinging your legs.','Grinding out ugly reps: log a 0 and do a negative instead.']},
  'Flexed-arm hang':{type:'bar',views:{side:{a:TOPp,b:MIDp,...BAR_SIDE},front:{a:FTOP,b:FMID,...BAR_FRONT}},
   caps:['Hold: chin above the bar','Time stops when the chin drops below'],trace:null,
   cues:[['a','N','Chin above bar, head neutral'],['a','E','Elbows tucked close'],['a','So','Shoulders down & back'],['both','A','Legs together, no swinging']],
-  mistake:{pose:{...TOPp,ht:40,ua:34},text:'Tilting the head back to keep the chin up'},
+  mistake:{pose:{...TOPp,ht:44,wy:-1},text:'Tilting the head back to keep the chin up'},
   steps:['Step up from a chair so your chin is already above the bar.','Pull shoulders down and back, elbows tight to your sides.','Squeeze your legs together slightly in front of you and hold.','Stop the clock when your chin drops below the bar.'],
   mistakes:['Tilting your head back to “cheat” the chin up.','Shrugging into your ears.','Swinging or bending the knees.']},
  'Scapular pulls':{type:'bar',views:{side:{a:PASSIVEp,b:{...HANGp,to:185,elev:-1},...BAR_SIDE},back:{a:{...FPASS,back:1},b:{...FHANG,back:1,elev:-1.5},...BAR_FRONT},front:{a:FPASS,b:FHANG,...BAR_FRONT}},
-  caps:['Start: relaxed hang, shoulders by ears','Pull shoulder blades down & back'],trace:'N',
+  caps:['Start: relaxed hang, shoulders by ears','Pull shoulder blades down & back'],trace:'N',arrow:'straight',
   cues:[['both','E','Arms stay straight'],['b','So','Shoulders away from ears'],['b','S','Chest lifts slightly'],['a','N','Ears between arms (relaxed)']],
-  mistake:{pose:{...HANGp,ua:150,fa:190},front:{...FHANG,ua:138,fa:206},text:'Bending the elbows (that turns it into a pull-up)'},
+  mistake:{pose:{...HANGp,wy:44,wx:5},front:{...FHANG,wy:42},text:'Bending the elbows (that turns it into a pull-up)'},
   steps:['Hang with straight arms and let your shoulders rise to your ears.','Without bending your elbows, pull your shoulder blades down and together.','Your body rises a few centimetres and your chest lifts slightly. Pause 1 second.','Relax back to the hang slowly and repeat.'],
   mistakes:['Bending the arms: the elbows must stay locked.','Rushing: it’s a small, slow movement.','Jerking up and dropping down.']},
  'Dead hang':{type:'bar',views:{side:{a:PASSIVEp,b:HANGp,...BAR_SIDE},front:{a:FPASS,b:FHANG,...BAR_FRONT},back:{a:{...FPASS,back:1},b:{...FHANG,back:1},...BAR_FRONT}},
-  caps:['Settle in (relaxed)','Active hang: shoulders gently down, hold'],trace:'N',
+  caps:['Settle in (relaxed)','Active hang: shoulders gently down, hold'],trace:'N',arrow:'straight',
   cues:[['b','So','Shoulders away from ears'],['both','E','Straight arms'],['both','G','Whole hand wraps the bar'],['both','A','Body still, legs together']],
-  mistake:{pose:{...HANGp,ua:160,fa:192},front:{...FHANG,ua:146,fa:200},text:'Bent arms or hanging totally loose'},
+  mistake:{pose:{...HANGp,wy:46,wx:5},front:{...FHANG,wy:45},text:'Bent arms or hanging totally loose'},
   steps:['Step off a chair onto the bar rather than jumping.','Grip with your whole hand, thumb wrapped, one fist outside your shoulders.','Keep a little tension: shoulders slightly down, away from your ears.','Hold, and step down 1–2 seconds before your grip would give out.'],
   mistakes:['Hanging completely loose for long holds (hard on the shoulder joint).','Jumping up or dropping off.','Going to grip failure: stop a little before.']},
  'Push-ups':{type:'floor',views:{side:{a:{to:108,ht:24,ua:3,fa:0,th:-70,sh:-70,ft:12,hand:'flat',noFarArmShift:1},b:{to:92,ht:26,ua:-105,fa:0,th:-88,sh:-88,ft:25,hand:'flat'},props:'floor',anchor:'W',at:[248,198],sc:1}},
-  caps:['Top: arms straight, body in one line','Lower until chest is a fist off the floor'],trace:'S',
+  caps:['Top: arms straight, body in one line','Lower until chest is a fist off the floor'],trace:'S',arrow:'straight',
   cues:[['a','W','Hands under shoulders'],['a','H','Straight line head to heels'],['b','E','Elbows ~45° from body'],['b','S','Chest a fist off floor']],
   mistake:{pose:{to:122,ht:24,ua:3,fa:0,th:-77,sh:-77,ft:12,hand:'flat'},text:'Hips sagging (or piking up)'},
   steps:['Hands just wider than shoulders, directly under them, fingers forward.','Squeeze glutes and abs so you’re one straight line from head to heels.','Lower with elbows angled about 45° back from your body (an arrow shape, not a T).','Stop when your chest is a fist off the floor, then press back up.'],
@@ -749,10 +836,10 @@ const EXD={
   mistake:{pose:{...HANGp,to:200,th:68,sh:-12,ft:40},text:'Swinging and leaning back'},
   steps:['Hang still with shoulders gently pulled down (no swinging).','Exhale and tuck your pelvis, then bring your knees up toward your chest.','Pause at the top, curling your hips slightly up.','Lower slowly to a still hang before the next rep.'],
   mistakes:['Swinging to get the knees up (momentum does the work, not your abs).','Leaning far back.','Dropping the legs quickly.']},
- 'External rotations (7 lb)':{type:'floor',views:{side:{a:{to:-90,ht:-90,ua:90,fa:72,th:90,sh:105,ft:180,hand:'db',ha:72,noFace:1,armOff:-8,noFar:1,flipN:1},b:{to:-90,ht:-90,ua:90,fa:178,th:90,sh:105,ft:180,hand:'db',ha:178,noFace:1,armOff:-8,noFar:1,flipN:1},props:'floorLow',anchor:'H',at:[214,186],sc:1.15,dbPlate:1}},
+ 'External rotations (7 lb)':{type:'floor',views:{end:{a:{end:1,er:22},b:{end:1,er:104},props:'floorEnd',anchor:'H'},front:{a:{to:-90,ht:-90,ua:90,er:10,erK:.14,th:90,sh:105,ft:180,hand:'db',noFace:1,armOff:-8,noFar:1,flipN:1},b:{to:-90,ht:-90,ua:90,er:104,erK:.14,th:90,sh:105,ft:180,hand:'db',noFace:1,armOff:-8,noFar:1,flipN:1},props:'floorLow',anchor:'H'}},
   caps:['Start: forearm across your belly','Rotate up until hand is just above elbow height'],trace:'G',
-  cues:[['both','E','Towel between elbow and ribs'],['b','G','Hand just above elbow height'],['both','So','Elbow bent 90°, stays put']],
-  mistake:{pose:{to:-90,ht:-90,ua:55,fa:178,th:90,sh:105,ft:180,hand:'db',ha:178,noFace:1,armOff:-8,noFar:1,flipN:1},text:'Elbow lifting off your side / rolling back'},
+  cues:[['both','E','Elbow bent 90°, pinned on the towel'],['a','W','Forearm starts across your belly'],['b','G','Hand just above elbow height']],
+  mistake:{pose:{end:1,er:104,lift:9},side:{to:-90,ht:-90,ua:52,er:104,erK:.14,th:90,sh:105,ft:180,hand:'db',noFace:1,armOff:-8,noFar:1,flipN:1},text:'Elbow lifting off your side / rolling back'},
   steps:['Lie on your side with your head supported. Top arm bent 90°, a rolled towel between elbow and ribs.','Start with the dumbbell resting near the floor, forearm across your belly.','Rotate the forearm up, keeping the elbow pinned, until the weight is just above elbow height.','Lower slowly. Do all reps, then switch sides.'],
   mistakes:['Letting the elbow drift away from your side.','Rolling your body back to lift the weight.','Going heavy: 1–7 lb is plenty for the rotator cuff.']},
  'Reverse wrist curls (7 lb)':{type:'seat',views:{side:{a:{to:140,ht:-20,ua:2,fa:90,th:90,sh:0,ft:90,hand:'db',ha:28,noFar:0},b:{to:140,ht:-20,ua:2,fa:90,th:90,sh:0,ft:90,hand:'db',ha:150},props:'chair',anchor:'H',at:[146,137],sc:1.1,dbPlate:1}},
@@ -764,144 +851,168 @@ const EXD={
 ['Negative pull-ups','Pull-up singles','Flexed-arm hang','Scapular pulls','Dead hang','Hanging knee raises'].forEach(n=>EXD[n].grip='bar');
 EXD['Push-ups'].grip='flat';EXD['External rotations (7 lb)'].gripNote='Light grip on the handle. Palm faces your belly at the start and turns forward as you rotate up.';EXD['External rotations (7 lb)'].grip='db';EXD['Reverse wrist curls (7 lb)'].grip='db';
 
-const lerpPose=(a,b,t)=>{const o={...a};for(const k in b){if(typeof b[k]==='number'&&typeof a[k]==='number')o[k]=a[k]+(b[k]-a[k])*t;else if(t>.5)o[k]=b[k]}return o};
+const ANGK=new Set(['to','ht','ua','fa','th','sh','ft','ha']);
+const lerpPose=(a,b,t)=>{const o={...a};for(const k in b){if(typeof b[k]==='number'&&typeof a[k]==='number'){const d=ANGK.has(k)?((b[k]-a[k]+540)%360)-180:b[k]-a[k];o[k]=a[k]+d*t}else if(t>.5)o[k]=b[k]}return o};
 const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
-function drawFig(v,pose,st){const f=st.fit||v._fit||{at:[0,0],sc:1};const o={...pose,anchor:v.anchor,at:f.at,sc:f.sc,dbPlate:v.dbPlate,barSide:v.props==='barSide'};return (pose.ua!==undefined&&pose.to===undefined)?drawFront(o,st):drawSide(o,st)}
-
-/* ---------- grip insets ---------- */
-function gripInset(kind,view){const cx=310,cy=62,R=40;let c='';
- if(kind==='bar'&&view==='side'){c=`<circle cx="${cx}" cy="${cy}" r="11" fill="var(--bar)"/>
-   <path d="M${cx+9},${cy+42} L${cx+10},${cy+20} C${cx+18},${cy+8} ${cx+19},${cy-3} ${cx+15},${cy-11}" stroke="var(--fig)" stroke-width="14" fill="none" stroke-linecap="round"/>
-   <path d="M${cx+14},${cy-11} C${cx+7},${cy-24} ${cx-11},${cy-22} ${cx-16},${cy-7} C${cx-18},${cy} ${cx-14},${cy+5} ${cx-9},${cy+7}" stroke="var(--fig)" stroke-width="7.5" fill="none" stroke-linecap="round"/>
-   <path d="M${cx+10},${cy+19} C${cx+2},${cy+26} ${cx-10},${cy+23} ${cx-14},${cy+12}" stroke="var(--fig2)" stroke-width="6.5" fill="none" stroke-linecap="round"/>`;}
- else if(kind==='bar'){c=`<rect x="${cx-40}" y="${cy-12}" width="80" height="12" rx="6" fill="var(--bar)"/><rect x="${cx-13}" y="${cy-4}" width="26" height="40" rx="8" fill="var(--fig)"/>
-   ${[0,1,2,3].map(i=>`<rect x="${cx-13+i*6.5}" y="${cy-22}" width="6.5" height="22" rx="3.2" fill="var(--fig)" stroke="var(--soft)" stroke-width="1"/>`).join('')}
-   <path d="M${cx-12},${cy+18} C${cx-20},${cy+14} ${cx-21},${cy+4} ${cx-17},${cy-1} C${cx-13},${cy-4} ${cx-8},${cy} ${cx-7},${cy+5}" fill="var(--fig2)" stroke="var(--soft)" stroke-width="1"/>`;}
- else if(kind==='flat'){c=`<path d="M${cx-14},${cy+30} C${cx-16},${cy+14} ${cx-16},${cy+4} ${cx-12},${cy-2} L${cx-14},${cy-24} C${cx-14},${cy-28} ${cx-9},${cy-28} ${cx-9},${cy-24} L${cx-6},${cy-6} L${cx-5},${cy-30} C${cx-5},${cy-34} ${cx},${cy-34} ${cx},${cy-30} L${cx+1},${cy-6} L${cx+3},${cy-28} C${cx+3},${cy-32} ${cx+8},${cy-32} ${cx+8},${cy-28} L${cx+8},${cy-4} L${cx+11},${cy-20} C${cx+12},${cy-24} ${cx+16},${cy-23} ${cx+16},${cy-19} L${cx+14},${cy+4} L${cx+22},${cy-2} C${cx+25},${cy-4} ${cx+27},${cy} ${cx+25},${cy+3} L${cx+14},${cy+18} C${cx+12},${cy+26} ${cx+10},${cy+30} ${cx+10},${cy+30} Z" fill="var(--fig)" stroke="var(--fig2)" stroke-width=".8"/>`;}
- else if(kind==='db'){c=`<rect x="${cx-30}" y="${cy-4}" width="60" height="8" rx="3" fill="var(--bar)"/><rect x="${cx-34}" y="${cy-16}" width="10" height="32" rx="3" fill="var(--bar)"/><rect x="${cx+24}" y="${cy-16}" width="10" height="32" rx="3" fill="var(--bar)"/>
-   <rect x="${cx-15}" y="${cy-10}" width="30" height="24" rx="9" fill="var(--fig)" stroke="var(--fig2)" stroke-width=".8"/>${[0,1,2].map(i=>`<line x1="${cx-7+i*7}" x2="${cx-7+i*7}" y1="${cy-8}" y2="${cy+2}" stroke="var(--fig2)" stroke-width="1"/>`).join('')}`;}
- const cap={bar:view==='side'?'fingers over, thumb under':'your view: knuckles on top',flat:'fingers spread, forward',db:'palm down, firm grip'}[kind];
- return `<g><circle cx="${cx}" cy="${cy}" r="${R+3}" fill="var(--card)" stroke="var(--line)"/><clipPath id="gclip"><circle cx="${cx}" cy="${cy}" r="${R}"/></clipPath><g clip-path="url(#gclip)"><rect x="${cx-R}" y="${cy-R}" width="${2*R}" height="${2*R}" fill="var(--soft)"/>${c}</g>
-  <text x="352" y="${cy+R+16}" font-size="9.5" font-weight="650" fill="var(--slate)" text-anchor="end">${cap}</text></g>`}
+const isFront=p=>p.to===undefined&&!p.end;
+const poseKind=p=>p.end?'end':isFront(p)?'front':'side';
+const VLAB={side:'Side',front:'Front',back:'Back',end:'Head end'};
+function drawFig(v,pose,st){const f=st.fit||v._fit||{at:[0,0],sc:1};const o={...pose,anchor:v.anchor,at:f.at,sc:f.sc,barSide:v.props==='barSide',barFront:v.props==='barFront'};return pose.end?drawEnd(o,st):isFront(pose)?drawFront(o,st):drawSide(o,st)}
 
 /* ---------- auto-fit: every pose is measured from its real outline, then scaled into the stage ---------- */
-const REGION={barSide:{H:300,x:[132,228],y:[20,288],align:'top',max:1.35},barFront:{H:300,x:[112,248],y:[28,288],align:'top',max:1.3},
- floor:{H:224,x:[14,346],y:[84,206],align:'bottom',max:1.35},floorLow:{H:224,x:[24,336],y:[84,206],align:'bottom',max:1.5},chair:{H:250,x:[50,300],y:[66,236],align:'bottom',max:1.7}};
+const REGION={barSide:{H:372,x:[118,242],y:[22,360],align:'top',max:2},barFront:{H:372,x:[92,268],y:[30,360],align:'top',max:2},
+ floor:{H:256,x:[18,342],y:[118,236],align:'bottom',max:1.75},floorLow:{H:248,x:[30,330],y:[100,226],align:'bottom',max:1.8},floorEnd:{H:260,x:[110,250],y:[46,238],align:'bottom',max:3.6},chair:{H:300,x:[40,300],y:[70,278],align:'bottom',max:1.95}};
 function fitView(X,v){if(v._fit)return v._fit;const R=REGION[v.props],pts=[];
  [v.a,v.b,mistakePose(X,v)].forEach(p=>{if(!p)return;drawFig(v,p,{style:'ghost',collect:pts,fit:{at:[0,0],sc:1}})});
  const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),bx=[Math.min(...xs),Math.max(...xs)],by=[Math.min(...ys),Math.max(...ys)];
  const s=Math.min((R.x[1]-R.x[0])/(bx[1]-bx[0]),(R.y[1]-R.y[0])/(by[1]-by[0]),R.max);
  const ax=(R.x[0]+R.x[1])/2-(bx[0]+bx[1])/2*s,ay=R.align==='top'?R.y[0]-by[0]*s:R.y[1]-by[1]*s;
  return v._fit={at:[ax,ay],sc:s,H:R.H,box:[bx[0]*s+ax,by[0]*s+ay,bx[1]*s+ax,by[1]*s+ay],floor:R.y[1]}}
-function propsSVG(v,P,f){const s=f.sc,B='var(--bar)';
+function propsSVG(v,P,f){const s=f.sc,B='var(--metal)',fl=y=>`<rect x="0" y="${y}" width="360" height="${f.H-y}" fill="var(--line)" opacity=".55"/><line x1="0" x2="360" y1="${y}" y2="${y}" stroke="var(--line-strong)" stroke-width="1.5"/>`;
  switch(v.props){
-  case 'barSide':return{back:`<line x1="${P.G[0]-46}" x2="${P.G[0]+46}" y1="${P.G[1]}" y2="${P.G[1]}" stroke="${B}" stroke-width="2" opacity=".3"/>`,front:''};
-  case 'barFront':return{back:`<line x1="${P.G[0]-80*s}" x2="${P.G[0]+80*s}" y1="${P.G[1]}" y2="${P.G[1]}" stroke="${B}" stroke-width="${5.2*s}" stroke-linecap="round"/>`,front:''};
-  case 'floor':return{back:`<line x1="0" x2="360" y1="${f.floor+1}" y2="${f.floor+1}" stroke="${B}" stroke-width="2" opacity=".4"/>`,front:''};
-  case 'floorLow':return{back:`<line x1="0" x2="360" y1="${f.floor+1}" y2="${f.floor+1}" stroke="${B}" stroke-width="2" opacity=".4"/><ellipse cx="${P.E[0]}" cy="${P.E[1]+6*s}" rx="${5.5*s}" ry="${3.6*s}" fill="var(--slate)" opacity=".45"/>`,front:''};
-  case 'chair':{const y=P.H[1]+9.6*s,x0=P.H[0]-24*s,x1=P.H[0]+22*s;return{back:`<line x1="0" x2="360" y1="${f.floor+1}" y2="${f.floor+1}" stroke="${B}" stroke-width="2" opacity=".4"/><rect x="${x0}" y="${y}" width="${x1-x0}" height="${5*s}" rx="2" fill="${B}" opacity=".5"/><line x1="${x0+5*s}" x2="${x0+5*s}" y1="${y+5*s}" y2="${f.floor}" stroke="${B}" stroke-width="${3*s}" opacity=".5"/><line x1="${x1-5*s}" x2="${x1-5*s}" y1="${y+5*s}" y2="${f.floor}" stroke="${B}" stroke-width="${3*s}" opacity=".5"/>`,front:''}}}
- return{back:'',front:''}}
+  case 'barSide':{const c=P.G,r=RB*s+3;return{back:'',front:'',obst:[[c[0]-r,c[1]-r,c[0]+r,c[1]+r]]}}
+  case 'barFront':return{back:'',front:'',obst:[[Math.max(4,Math.min(P.GL[0],P.GR[0])-74*s),P.G[1]-RB*s-3,Math.min(356,Math.max(P.GL[0],P.GR[0])+74*s),P.G[1]+RB*s+3]]};
+  case 'floor':return{back:fl(f.floor+.5),front:'',obst:[[0,f.floor,360,f.H]]};
+  case 'floorEnd':
+  case 'floorLow':{const y=f.floor+.5;return{back:fl(y)+`<ellipse cx="${P.E[0]}" cy="${P.E[1]+5.6*s}" rx="${6*s}" ry="${3.6*s}" fill="var(--h-blue)" opacity=".8"/><path d="M${P.E[0]-5*s},${P.E[1]+5.6*s} h${10*s}" stroke="rgba(255,255,255,.35)" stroke-width="${.8*s}"/>`,front:'',obst:[[0,y,360,f.H]]}}
+  case 'chair':{const y=P.H[1]+9.8*s,x0=P.H[0]-24*s,x1=P.H[0]+20*s,fy=f.floor+.5;return{back:fl(fy)+`<rect x="${x0}" y="${y}" width="${x1-x0}" height="${5*s}" rx="${2*s}" fill="${B}" opacity=".75"/><g stroke="${B}" stroke-width="${3*s}" opacity=".75" stroke-linecap="round"><line x1="${x0+5*s}" x2="${x0+4*s}" y1="${y+5*s}" y2="${fy}"/><line x1="${x1-5*s}" x2="${x1-4*s}" y1="${y+5*s}" y2="${fy}"/></g>`,front:'',obst:[[x0,y,x1,fy],[0,fy,360,f.H]]}}}
+ return{back:'',front:'',obst:[]}}
 
-/* ---------- grip / hand close-ups (no text inside; caption lives under the stage) ---------- */
-function gripInset(kind,view,cx,cy,R){let c='';const F1='var(--fig)',F2='var(--fig2)';
- if(kind==='bar'&&view==='side')c=`<circle cx="${cx}" cy="${cy}" r="11" fill="var(--bar)"/>
-   <path d="M${cx+9},${cy+44} L${cx+10},${cy+20} C${cx+18},${cy+8} ${cx+19},${cy-3} ${cx+15},${cy-11}" stroke="${F1}" stroke-width="14" fill="none" stroke-linecap="round"/>
-   <path d="M${cx+14},${cy-11} C${cx+7},${cy-24} ${cx-11},${cy-22} ${cx-16},${cy-7} C${cx-18},${cy} ${cx-14},${cy+5} ${cx-9},${cy+7}" stroke="${F1}" stroke-width="7.5" fill="none" stroke-linecap="round"/>
-   <path d="M${cx+10},${cy+19} C${cx+2},${cy+26} ${cx-10},${cy+23} ${cx-14},${cy+12}" stroke="${F2}" stroke-width="6.5" fill="none" stroke-linecap="round"/>`;
- else if(kind==='bar')c=`<rect x="${cx-R}" y="${cy-12}" width="${2*R}" height="12" rx="6" fill="var(--bar)"/><rect x="${cx-13}" y="${cy-4}" width="26" height="40" rx="8" fill="${F1}"/>
-   ${[0,1,2,3].map(i=>`<rect x="${cx-13+i*6.5}" y="${cy-22}" width="6.5" height="22" rx="3.2" fill="${F1}" stroke="var(--soft)" stroke-width="1"/>`).join('')}
-   <path d="M${cx-12},${cy+18} C${cx-20},${cy+14} ${cx-21},${cy+4} ${cx-17},${cy-1} C${cx-13},${cy-4} ${cx-8},${cy} ${cx-7},${cy+5}" fill="${F2}" stroke="var(--soft)" stroke-width="1"/>`;
- else if(kind==='flat')c=`<g transform="translate(${cx} ${cy+4})"><path d="M-14,30 C-16,14 -16,4 -12,-2 L-14,-24 C-14,-28 -9,-28 -9,-24 L-6,-6 L-5,-30 C-5,-34 0,-34 0,-30 L1,-6 L3,-28 C3,-32 8,-32 8,-28 L8,-4 L11,-20 C12,-24 16,-23 16,-19 L14,4 L22,-2 C25,-4 27,0 25,3 L14,18 C12,26 10,30 10,30 Z" fill="${F1}" stroke="${F2}" stroke-width=".8"/></g>`;
- else if(kind==='db')c=`<rect x="${cx-30}" y="${cy-4}" width="60" height="8" rx="3" fill="var(--bar)"/><rect x="${cx-34}" y="${cy-16}" width="10" height="32" rx="3" fill="var(--bar)"/><rect x="${cx+24}" y="${cy-16}" width="10" height="32" rx="3" fill="var(--bar)"/>
-   <rect x="${cx-15}" y="${cy-10}" width="30" height="24" rx="9" fill="${F1}" stroke="${F2}" stroke-width=".8"/>${[0,1,2].map(i=>`<line x1="${cx-7+i*7}" x2="${cx-7+i*7}" y1="${cy-8}" y2="${cy+2}" stroke="${F2}" stroke-width="1"/>`).join('')}`;
- return `<g><circle cx="${cx}" cy="${cy}" r="${R+2.5}" fill="var(--card)" stroke="var(--line)" stroke-width="1.2"/><clipPath id="gc${cx|0}${cy|0}"><circle cx="${cx}" cy="${cy}" r="${R}"/></clipPath><g clip-path="url(#gc${cx|0}${cy|0})"><rect x="${cx-R}" y="${cy-R}" width="${2*R}" height="${2*R}" fill="var(--soft)"/>${c}</g></g>`}
-const GRIPTXT={bar:{side:'Bar sits where fingers meet palm. Fingers over the top, thumb wraps under.',front:'Hands one fist-width outside each shoulder, palms facing away.',back:'Hands one fist-width outside each shoulder, palms facing away.'},flat:'Hands under shoulders, fingers spread and pointing forward.',db:'Palm faces down, firm but relaxed grip on the handle.'};
+/* ---------- label placement: labels never overlap each other, the figure (at any point in the rep), the props or the edges ---------- */
+const MCTX=document.createElement('canvas').getContext('2d');
+const LFONT='600 12.5px Inter, system-ui, sans-serif',LH=15;
+const tw=t=>{MCTX.font=LFONT;return MCTX.measureText(t).width};
+function wrapW(txt,max){const ws=txt.split(' '),out=[''];ws.forEach(w=>{const c=out[out.length-1],n=(c?c+' ':'')+w;if(c&&tw(n)>max)out.push(w);else out[out.length-1]=n});return out}
+function pip(p,pl){let c=false;for(let i=0,j=pl.length-1;i<pl.length;j=i++){const a=pl[i],b=pl[j];if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])c=!c}return c}
+const segX=(a,b,c,d)=>{const o=(p,q,r)=>Math.sign((q[0]-p[0])*(r[1]-p[1])-(q[1]-p[1])*(r[0]-p[0]));return o(a,b,c)*o(a,b,d)<0&&o(c,d,a)*o(c,d,b)<0};
+/* occupancy grid (3px cells) of everything a label must not cover */
+function occGrid(W,H,polys,rects,pts){const C=3,nx=Math.ceil(W/C),ny=Math.ceil(H/C),g=new Uint8Array(nx*ny);
+ polys.forEach(pl=>{let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;pl.forEach(p=>{x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1])});
+  for(let j=Math.max(0,Math.floor((y0-2)/C));j<=Math.min(ny-1,Math.ceil((y1+2)/C));j++)for(let i=Math.max(0,Math.floor((x0-2)/C));i<=Math.min(nx-1,Math.ceil((x1+2)/C));i++){
+   if(g[j*nx+i])continue;const cx=i*C+1.5,cy=j*C+1.5;if(pip([cx,cy],pl)||pip([cx-2.2,cy],pl)||pip([cx+2.2,cy],pl)||pip([cx,cy-2.2],pl)||pip([cx,cy+2.2],pl))g[j*nx+i]=1}});
+ rects.forEach(r=>{for(let j=Math.max(0,Math.floor(r[1]/C));j<=Math.min(ny-1,Math.floor(r[3]/C));j++)for(let i=Math.max(0,Math.floor(r[0]/C));i<=Math.min(nx-1,Math.floor(r[2]/C));i++)g[j*nx+i]=1});
+ pts.forEach(p=>{const i=Math.floor(p[0]/C),j=Math.floor(p[1]/C);for(let dj=-2;dj<=2;dj++)for(let di=-2;di<=2;di++){const ii=i+di,jj=j+dj;if(ii>=0&&jj>=0&&ii<nx&&jj<ny)g[jj*nx+ii]=1}});
+ const at=(x,y)=>{const i=Math.floor(x/C),j=Math.floor(y/C);return i<0||j<0||i>=nx||j>=ny?0:g[j*nx+i]};
+ const rect=r=>{for(let j=Math.max(0,Math.floor(r[1]/C));j<=Math.min(ny-1,Math.floor(r[3]/C));j++)for(let i=Math.max(0,Math.floor(r[0]/C));i<=Math.min(nx-1,Math.floor(r[2]/C));i++)if(g[j*nx+i])return true;return false};
+ return {at,rect}}
+function placeLabels(items,occ,W,H){const placed=[],out=[],PAD=4,M=6;
+ items.slice().sort((a,b)=>a.pt[1]-b.pt[1]).forEach(it=>{let best=null;
+  for(const maxw of [124,100,84]){const lines=wrapW(it.txt,maxw),w=Math.max(...lines.map(tw)),h=lines.length*LH-2;
+   const cands=[];
+   for(const dist of [22,32,44,58,74,92,112,136,162,190])for(let a=0;a<360;a+=12){const cx=it.pt[0]+Math.cos(a*D2R)*dist,cy=it.pt[1]+Math.sin(a*D2R)*dist;cands.push([cx<it.pt[0]?cx-w:cx,cy-h/2])}
+   for(let y=M;y<=H-h-M;y+=5){cands.push([M,y],[W-M-w,y])}
+   for(const [x,y] of cands){const r=[x-PAD,y-PAD,x+w+PAD,y+h+PAD];
+    if(r[0]<2||r[1]<2||r[2]>W-2||r[3]>H-2)continue;
+    if(placed.some(q=>!(r[2]<q[0]||r[0]>q[2]||r[3]<q[1]||r[1]>q[3])))continue;
+    if(occ.rect(r))continue;
+    const left=it.pt[0]<x,right=it.pt[0]>x+w,ex=left?x-3:right?x+w+3:Math.max(x,Math.min(it.pt[0],x+w)),ey=left||right?Math.max(y+5,Math.min(it.pt[1],y+h-5)):(it.pt[1]<y?y-4:y+h+2);
+    const L=Math.hypot(ex-it.pt[0],ey-it.pt[1]);if(L<10)continue;
+    if(placed.some(q=>{for(let i=1;i<=24;i++){const px=it.pt[0]+(ex-it.pt[0])*i/24,py=it.pt[1]+(ey-it.pt[1])*i/24;if(px>q[0]&&px<q[2]&&py>q[1]&&py<q[3])return true}return false}))continue;
+    let inside=0;const n=Math.ceil(L/3);for(let i=1;i<=n;i++){const d=i/n*L;if(d<12)continue;if(occ.at(it.pt[0]+(ex-it.pt[0])*i/n,it.pt[1]+(ey-it.pt[1])*i/n))inside++}
+    const cross=out.filter(o=>segX(it.pt,[ex,ey],o.pt,o.e)).length;
+    const score=L+inside*10+cross*120+(lines.length-1)*14+(left||right?0:10);
+    if(!best||score<best.score)best={score,x,y,w,h,lines,e:[ex,ey],r,side:left?'L':right?'R':'C'}}
+   if(best)break}
+  if(!best){const lines=wrapW(it.txt,124),w=Math.max(...lines.map(tw)),h=lines.length*LH;let y=M+placed.length*(h+8);best={x:M,y,w,h,lines,e:[M+w+3,y+h/2],r:[M,y,M+w,y+h],side:'L'}}
+  placed.push(best.r);out.push({...best,pt:it.pt,txt:it.txt,key:it.key})});
+ return out}
 
-
-/* ---------- grip guide (shown under the stage when Grip/Hands is on) ---------- */
-function gArc(cx,cy,r,a0,a1,n=14){const p=[];for(let i=0;i<=n;i++){const t=(a0+(a1-a0)*i/n)*D2R;p.push([cx+Math.cos(t)*r,cy-Math.sin(t)*r])}return p}
-const gStroke=(pts,w,c='var(--fig)')=>{const d=smooth(pts,false);return `<path d="${d}" fill="none" stroke="var(--fig2)" stroke-width="${w+2.4}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`};
-const gLab=(x,y,t,a='middle',c='var(--slate)')=>`<text x="${x}" y="${y}" font-size="11" font-weight="650" fill="${c}" text-anchor="${a}">${t}</text>`;
-const gTitle=(x,t,c='var(--ink)')=>`<text x="${x}" y="20" font-size="13" font-weight="700" fill="${c}">${t}</text>`;
-function gripGuide(kind){
- const W=360,Hh=196;let g='';
- if(kind==='bar'){
-  /* width */
-  const sl=66,sr=124,hl=48,hr=142,by=62;
-  g+=gTitle(12,'Width');
-  g+=`<line x1="12" x2="178" y1="${by}" y2="${by}" stroke="var(--bar)" stroke-width="6" stroke-linecap="round"/>`;
-  g+=gStroke([[sl,116],[sl-6,92],[hl,by+6]],10)+gStroke([[sr,116],[sr+6,92],[hr,by+6]],10);
-  g+=`<path d="M${sl-7},122 Q${sl-4},110 ${sl+10},108 L${sr-10},108 Q${sr+4},110 ${sr+7},122 L${sr-3},146 Q${sr-6},158 ${sr-6},168 L${sl+6},168 Q${sl+6},158 ${sl+3},146 Z" fill="var(--fig)" stroke="var(--fig2)" stroke-width="2"/>`;
-  g+=`<rect x="90" y="98" width="10" height="13" rx="3" fill="var(--fig)" stroke="var(--fig2)" stroke-width="2"/><ellipse cx="95" cy="86" rx="11" ry="13" fill="var(--fig)" stroke="var(--fig2)" stroke-width="2"/>`;
-  [[hl,-1],[hr,1]].forEach(([x,sg])=>{g+=`<rect x="${x-7}" y="${by-8}" width="14" height="13" rx="4" fill="var(--fig)" stroke="var(--fig2)" stroke-width="1.6"/>`+[0,1,2].map(i=>`<line x1="${x-3.5+i*3.5}" x2="${x-3.5+i*3.5}" y1="${by-7}" y2="${by-2}" stroke="var(--fig2)" stroke-width="1"/>`).join('')});
-  g+=`<g stroke="var(--slate)" stroke-width="1.4" stroke-dasharray="3 3"><line x1="${sl}" x2="${sl}" y1="${by+8}" y2="112"/><line x1="${sr}" x2="${sr}" y1="${by+8}" y2="112"/></g>`;
-  [[hl,sl],[sr,hr]].forEach(([a,b])=>{g+=`<line x1="${a+1}" x2="${b-1}" y1="47" y2="47" stroke="var(--rope)" stroke-width="1.8" marker-start="url(#gar)" marker-end="url(#gar)"/>`+gLab((a+b)/2,41,'1 fist','middle','var(--rope)')});
-  g+=`<line x1="${sl}" x2="${sr}" y1="182" y2="182" stroke="var(--slate)" stroke-width="1.6" marker-start="url(#gas)" marker-end="url(#gas)"/>`+gLab(95,178-2,'shoulder width');
-  /* wrap */
-  const cx=246,cy=96,R=15;
-  g+=`<line x1="190" x2="190" y1="12" y2="${Hh-12}" stroke="var(--line)"/>`+gTitle(202,'Wrap');
-  g+=`<path d="M${cx-R-14},${Hh-14} L${cx-R-12},${cy+18} C${cx-R-12},${cy+4} ${cx-R-10},${cy-6} ${cx-R-6},${cy-12} L${cx-R+2},${cy-6} L${cx-R+4},${cy+20} L${cx-R+4},${Hh-14} Z" fill="var(--fig)" stroke="var(--fig2)" stroke-width="2"/>`;
-  g+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="var(--bar)"/><circle cx="${cx-5}" cy="${cy-5}" r="4" fill="#fff" opacity=".18"/>`;
-  g+=gStroke(gArc(cx,cy,R+6,152,-42),11);
-  g+=gStroke(gArc(cx,cy,R+5,212,318),9,'var(--fig)');
-  g+=`<path d="M${cx+30},40 L${cx+14},${cy-R-6}" stroke="var(--slate)" stroke-width="1.2"/>`+gLab(cx+34,40,'fingers over','start')+gLab(cx+34,54,'the top','start');
-  g+=`<path d="M${cx+34},${cy+44} L${cx+10},${cy+R+7}" stroke="var(--slate)" stroke-width="1.2"/>`+gLab(cx+36,cy+48,'thumb','start')+gLab(cx+36,cy+62,'wraps under','start');
-  g+=`<path d="M${cx-R-24},${cy+44} L${cx-R-9},${cy+28}" stroke="var(--slate)" stroke-width="1.2"/>`+gLab(cx-R-26,cy+58,'palm','middle','var(--mute)');
- } else if(kind==='flat'){
-  const fig=(c,ok)=>{const sx=18,ey=ok?92:78,ex=ok?36:44,hx=ok?28:40,hy=ok?98:84;let s='';
-   s+=`<ellipse cx="${c}" cy="104" rx="20" ry="36" fill="var(--fig)" stroke="var(--fig2)" stroke-width="2"/><circle cx="${c}" cy="56" r="11" fill="var(--fig)" stroke="var(--fig2)" stroke-width="2"/>`;
-   [-1,1].forEach(sg=>{s+=gStroke([[c+sg*sx,76],[c+sg*ex,ey],[c+sg*hx,hy]],8,ok?'var(--fig)':'var(--fig)');
-    const hx2=c+sg*hx;s+=`<g transform="translate(${hx2} ${hy})">${[-4,-1.5,1,3.5].map((x,i)=>`<rect x="${x-1}" y="${-10+(i===0||i===3?2:0)}" width="2.4" height="9" rx="1.2" fill="var(--fig)" stroke="var(--fig2)" stroke-width=".8"/>`).join('')}<ellipse cx="0" cy="1" rx="5.5" ry="4.5" fill="var(--fig)" stroke="var(--fig2)" stroke-width="1"/></g>`});
-   const ang=ok?45:90,c2=ok?'var(--ok)':'var(--rope)';
-   s+=`<path d="M${c+18},120 A22 22 0 0 0 ${c+18+22*Math.sin(ang*D2R)},${120-22*Math.cos(ang*D2R)+0}" fill="none" stroke="${c2}" stroke-width="1.6" opacity="0"/>`;
-   s+=gLab(c,182,ok?'✓ Elbows ~45° (arrow)':'✗ Elbows 90° (T shape)','middle',c2);return s};
-  g+=gTitle(12,'From above, at the bottom of the push-up')+fig(92,1)+`<line x1="180" x2="180" y1="34" y2="${Hh-12}" stroke="var(--line)"/>`+fig(268,0);
-  g+=gLab(92,152,'hands under shoulders','middle','var(--mute)')+gLab(268,152,'shoulders take the strain','middle','var(--mute)');
- } else if(kind==='db'){
-  g+=gTitle(12,'Grip on the dumbbell');
-  const cy=96;g+=`<rect x="60" y="${cy-6}" width="240" height="12" rx="4" fill="var(--bar)"/><rect x="46" y="${cy-30}" width="20" height="60" rx="5" fill="var(--bar)"/><rect x="294" y="${cy-30}" width="20" height="60" rx="5" fill="var(--bar)"/>`;
-  g+=`<path d="M150,${cy+44} L148,${cy+14} C146,${cy-2} 150,${cy-22} 162,${cy-24} L204,${cy-24} C214,${cy-24} 220,${cy-14} 218,${cy-2} L214,${cy+16} L212,${cy+44} Z" fill="var(--fig)" stroke="var(--fig2)" stroke-width="2"/>`;
-  g+=[0,1,2,3].map(i=>`<path d="M${160+i*13},${cy-22} q5 -5 10 0" fill="none" stroke="var(--fig2)" stroke-width="1.6"/>`).join('');
-  g+=`<path d="M150,${cy+10} C140,${cy+12} 136,${cy+2} 142,${cy-4}" fill="none" stroke="var(--fig2)" stroke-width="2"/>`;
-  g+=gLab(184,cy-36,'back of hand up = palm faces down')+gLab(184,cy+62,'grip the middle of the handle, wrist straight','middle','var(--mute)');
- }
- return `<svg class="gguide" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Grip guide"><defs><marker id="gar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--rope)"/></marker><marker id="gas" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--slate)"/></marker></defs>${g}</svg>`}
 /* ---------- stage ---------- */
-function mistakePose(X,v){const m=X.mistake;if(!m)return null;const front=v.a.to===undefined,p=m.pose,isF=p.to===undefined;
- if(front===isF)return front?{...p,back:v.a.back}:p;const alt=front?m.front:m.side;return alt?(front?{...alt,back:v.a.back}:alt):null}
+function mistakePose(X,v){const m=X.mistake;if(!m)return null;const k=poseKind(v.a),p=poseKind(m.pose)===k?m.pose:m[k];if(!p)return null;return k==='front'?{...p,back:v.a.back}:p}
 function musMap(n){const m=MUS[n];if(!m)return{};const o={};m.s.forEach(k=>o[k]='s');m.p.forEach(k=>o[k]='p');return o}
-const DEFS2='<defs><marker id="ahv" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4.2" markerHeight="4.2" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--rope)"/></marker><marker id="abv" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--slate)"/></marker></defs>';
-function stageSVG(name,state){const X=EXD[name],v=X.views[state.view],t=state.t,pa=v.a,pb=v.b,cur=lerpPose(pa,pb,ease(t)),f=fitView(X,v),H=f.H;
- const lay=state.layers,mus=lay.muscles?musMap(name):null;
- const fig=drawFig(v,cur,{style:'body',mus,fit:f}),P=fig.P,pr=propsSVG(v,P,f),floor=X.type!=='bar';
+const anchorOf=(P,j)=>j==='N'&&P.Ch?P.Ch:j==='G'&&P.GR?P.GR:(P[j]||P[j+'R']);
+/* the motion arrow: straight for up/down travel, curved for arcs; it always points from Start to End */
+function motionArrow(X,v,f,occ){if(!X.trace)return null;const pts=[];
+ for(let i=0;i<=16;i++){const Q=drawFig(v,lerpPose(v.a,v.b,ease(i/16)),{style:'ghost',fit:f}).P;pts.push(anchorOf(Q,X.trace))}
+ const p0=pts[0],p1=pts[16],ch=sub(p1,p0),L=Math.hypot(...ch);if(L<4)return null;
+ const dv=nz(ch),nv=pp(dv);let dev=0;pts.forEach(p=>dev=Math.max(dev,Math.abs(dot(sub(p,p0),nv))));
+ const straight=X.arrow?X.arrow==='straight':dev<L*.12;
+ let best=null;
+ for(const sgn of [1,-1])for(const dist of [14,22,32,44,58,74,92]){let path;
+  if(straight){const o=[nv[0]*sgn*dist,nv[1]*sgn*dist],ext=Math.max(0,(34-L)/2),a=ad(ad(p0,o),dv,-ext+2),b=ad(ad(p1,o),dv,ext-2);path=[a,b]}
+  else{const mid=pts[8],bulge=dot(sub(mid,p0),nv)>0?1:-1;path=pts.map(p=>ad(p,nv,sgn*dist*(sgn===bulge?1:1)));}
+  let hits=0,out=0;path.forEach((p,i)=>{if(i<path.length-1){const n=Math.max(2,Math.ceil(Math.hypot(path[i+1][0]-p[0],path[i+1][1]-p[1])/3));for(let k=0;k<n;k++){const q=[p[0]+(path[i+1][0]-p[0])*k/n,p[1]+(path[i+1][1]-p[1])*k/n];if(occ.at(q[0],q[1]))hits++;if(q[0]<6||q[0]>354||q[1]<6||q[1]>f.H-6)out++}}});
+  const sc=hits*8+out*60+dist*.8;if(!best||sc<best.sc)best={sc,path}}
+ if(straight&&best.sc>40)for(const g of [8,14,22]){const len=Math.max(L,30),path=[ad(p0,dv,-(len+g)),ad(p0,dv,-g)];let hits=0,out=0;for(let k=0;k<=20;k++){const q=ad(path[0],dv,len*k/20);if(occ.at(q[0],q[1]))hits++;if(q[0]<6||q[0]>354||q[1]<6||q[1]>f.H-6)out++}const sc=hits*8+out*60+g*.8+6;if(sc<best.sc)best={sc,path}}
+ const pth=best.path,d=pth.length===2?`M${F(pth[0])} L${F(pth[1])}`:smooth(pth,false);
+ return {svg:`<path d="${d}" fill="none" stroke="var(--stage)" stroke-width="7" stroke-linecap="round" opacity=".85"/><path d="${d}" fill="none" stroke="var(--motion)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ahv)"/>`,pts:pth.length===2?Array.from({length:12},(_,i)=>[pth[0][0]+(pth[1][0]-pth[0][0])*i/11,pth[0][1]+(pth[1][1]-pth[0][1])*i/11]):pth}}
+const LCACHE=new Map();
+function stageLayout(name,X,v,f,view,ph,lay){const key=[name,view,ph,lay.movement?1:0,lay.mistake?1:0,lay.grip?1:0].join('|');if(LCACHE.has(key))return LCACHE.get(key);
+ const polys=[];for(const t of [0,.25,.5,.75,1])drawFig(v,lerpPose(v.a,v.b,ease(t)),{style:'body',fit:f,polys});
+ if(lay.mistake){const mp=mistakePose(X,v);if(mp)drawFig(v,mp,{style:'bad',fit:f,polys})}
+ const P0=drawFig(v,v.a,{style:'ghost',fit:f}).P,pr=propsSVG(v,P0,f);
+ let occ=occGrid(360,f.H,polys,pr.obst||[],[]);
+ const ends=[];drawFig(v,v.a,{style:'ghost',fit:f,polys:ends});drawFig(v,v.b,{style:'ghost',fit:f,polys:ends});
+ const arrow=lay.movement?motionArrow(X,v,f,occGrid(360,f.H,ends,pr.obst||[],[])):null;
+ if(arrow)occ=occGrid(360,f.H,polys,pr.obst||[],arrow.pts);
+ const PK=drawFig(v,ph==='a'?v.a:v.b,{style:'ghost',fit:f}).P,items=[];
+ X.cues.forEach(([p,j,txt],i)=>{if(p!=='both'&&p!==ph)return;const pt=anchorOf(PK,j);if(pt)items.push({pt,txt,key:j,i})});
+ const labels=placeLabels(items,occ,360,f.H);
+ const L={arrow:arrow&&arrow.svg,labels};LCACHE.set(key,L);return L}
+const DEFS2='<defs><marker id="ahv" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3.4" markerHeight="3.4" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--motion)"/></marker></defs>';
+function stageSVG(name,state){const X=EXD[name],v=X.views[state.view],t=state.t,pa=v.a,pb=v.b,cur=lerpPose(pa,pb,ease(t)),f=fitView(X,v),H=f.H,lay=state.layers,ph=t<.5?'a':'b';
+ const mus=lay.muscles?musMap(name):null;
+ const fig=drawFig(v,cur,{style:'body',mus,fit:f}),P=fig.P,pr=propsSVG(v,P,f),L=stageLayout(name,X,v,f,state.view,ph,lay);
  let g=pr.back;
- if(lay.movement){if(t>.03)g+=drawFig(v,pa,{style:'ghost',fit:f}).svg;if(t<.97)g+=drawFig(v,pb,{style:'ghost',fit:f}).svg}
+ if(lay.movement)g+=drawFig(v,pa,{style:'ghost',fit:f}).svg+drawFig(v,pb,{style:'ghost',fit:f}).svg;
  {const mp=lay.mistake&&mistakePose(X,v);if(mp)g+=drawFig(v,mp,{style:'bad',fit:f}).svg}
  g+=fig.svg+pr.front;
- /* motion arrow */
- if(lay.movement&&X.trace){const pts=[];for(let i=0;i<=16;i++){const Q=drawFig(v,lerpPose(pa,pb,ease(i/16)),{style:'ghost',fit:f}).P;pts.push(Q[X.trace]||Q[X.trace+'R'])}
-  const dx=pts[16][0]-pts[0][0],dy=pts[16][1]-pts[0][1],fwd=t<.5;
-  if(Math.hypot(dx,dy)>5){let d;
-   if(Math.abs(dx)<Math.abs(dy)*.45){const x=Math.min(f.box[2]+16,348);let y0=fwd?pts[0][1]:pts[16][1],y1=fwd?pts[16][1]:pts[0][1];const sg=Math.sign(y1-y0)||1;if(Math.abs(y1-y0)<30){const m=(y0+y1)/2;y0=m-sg*15;y1=m+sg*15}d=`M${x},${y0} L${x},${y1-sg*6}`}
-   else{const c=[(f.box[0]+f.box[2])/2,(f.box[1]+f.box[3])/2],q=(fwd?pts:pts.slice().reverse()).map(p=>{const vx=p[0]-c[0],vy=p[1]-c[1],L=Math.hypot(vx,vy)||1;return[p[0]+vx/L*13,p[1]+vy/L*13]});d='M'+q.map(F).join(' L')}
-   g+=`<path d="${d}" fill="none" stroke="var(--rope)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ahv)"/>`}}
- /* grip close-up + width guide */
- let gi=null;
- if(lay.grip&&X.grip){[P.G&&state.view==='side'?P.G:null,P.GL,P.GR,X.grip==='flat'?P.W:null,X.grip==='db'?P.G:null].forEach(p=>{if(p)g+=`<circle cx="${p[0]}" cy="${p[1]}" r="${11*f.sc}" fill="none" stroke="var(--slate)" stroke-width="1.6" stroke-dasharray="3 3"/>`})}
- /* cues */
- if(lay.cues){const ph=t<.5?'a':'b',cx=(f.box[0]+f.box[2])/2,items=[];
-  X.cues.forEach(([p,j,txt])=>{if(p!=='both'&&p!==ph)return;const pt=P[j]||P[j+'R'];if(pt)items.push({pt,txt})});
-  const wrap=(txt,n)=>{if(txt.length<=n)return[txt];const ws=txt.split(' '),out=[''];ws.forEach(w=>{const cur=out[out.length-1];if((cur+' '+w).trim().length>n&&cur)out.push(w);else out[out.length-1]=(cur+' '+w).trim()});return out};
-  const lab=(x,y,a,txt,n=99)=>{const ls=wrap(txt,n);return `<text x="${x}" y="${y}" font-size="12.5" font-weight="650" fill="var(--slate)" text-anchor="${a}" paint-order="stroke" stroke="var(--soft)" stroke-width="4" stroke-linejoin="round">${ls.map((l,i)=>`<tspan x="${x}" dy="${i?15:0}">${l}</tspan>`).join('')}</text>`};
-  const dotl=(pt,x,y)=>`<path d="M${F(pt)} L${x},${y}" stroke="var(--slate)" stroke-width="1.1" fill="none" opacity=".7"/><circle cx="${pt[0]}" cy="${pt[1]}" r="3" fill="var(--soft)" stroke="var(--slate)" stroke-width="1.6"/>`;
-  if(floor){const lim=gi?gi[0]-gi[2]-8:352,rowEnd=[-99,-99,-99];items.sort((a,b)=>a.pt[0]-b.pt[0]).forEach(c=>{const w=c.txt.length*6.6,base=Math.min(Math.max(c.pt[0],w/2+8),lim-w/2);let row=-1,x=base;
-    for(let r=0;r<3;r++){const cx2=Math.max(base,rowEnd[r]+10+w/2);if(cx2+w/2<=lim){row=r;x=cx2;break}}if(row<0){row=2;x=Math.max(w/2+8,lim-w/2)}rowEnd[row]=x+w/2;const y=22+row*22;
-    g+=dotl(c.pt,x,y+5)+lab(x,y,'middle',c.txt)})}
-  else{const L=items.filter(c=>c.pt[0]<cx),Rt=items.filter(c=>c.pt[0]>=cx);
-   const col=(arr,side)=>{arr.sort((a,b)=>a.pt[1]-b.pt[1]);let y=side==='R'&&gi?gi[1]+gi[2]+22:20;arr.forEach(c=>{const nl0=wrap(c.txt,16).length;y=Math.max(y,Math.min(H-12-15*(nl0-1),c.pt[1]+4));const x=side==='L'?10:350,w=c.txt.length*6.6,ex=side==='L'?x+w+5:x-w-5;
-     const nl=wrap(c.txt,16).length,ww=Math.max(...wrap(c.txt,16).map(l=>l.length))*6.6,ex2=side==='L'?x+ww+5:x-ww-5;
-     g+=dotl(c.pt,ex2,y-4)+lab(x,y,side==='L'?'start':'end',c.txt,16);y+=15*nl+14})};col(L,'L');col(Rt,'R')}}
- return `<svg class="stage" viewBox="0 0 360 ${H}" role="img" aria-label="${esc(name)}: ${esc(X.caps[t<.5?0:1])}">${DEFS2}${g}</svg>`}
+ if(L.arrow)g+=L.arrow;
+ if(lay.grip&&X.grip){(P.GL?[P.GL,P.GR]:[P.G]).forEach(p=>{if(p)g+=`<circle cx="${p[0]}" cy="${p[1]}" r="${12*f.sc}" fill="none" stroke="var(--h-blue)" stroke-width="2" stroke-dasharray="4 3"/>`})}
+ if(lay.cues)L.labels.forEach(l=>{const pt=anchorOf(P,l.key)||l.pt,ta=l.side==='R'?'end':l.side==='C'?'middle':'start',tx=l.side==='R'?l.x+l.w:l.side==='C'?l.x+l.w/2:l.x;
+  g+=`<path d="M${F(pt)} L${F(l.e)}" stroke="var(--cue)" stroke-width="1.3" fill="none"/><circle cx="${pt[0]}" cy="${pt[1]}" r="3.2" fill="var(--stage)" stroke="var(--cue)" stroke-width="1.8"/>`;
+  g+=`<text x="${tx}" y="${l.y+11}" font-size="12.5" font-weight="600" fill="var(--cue)" text-anchor="${ta}" paint-order="stroke" stroke="var(--stage)" stroke-width="4" stroke-linejoin="round">${l.lines.map((s,i)=>`<tspan x="${tx}" dy="${i?LH:0}">${esc(s)}</tspan>`).join('')}</text>`});
+ return `<svg class="stage" viewBox="0 0 360 ${H}" role="img" aria-label="${esc(name)}, ${esc(state.view)} view: ${esc(X.caps[t<.5?0:1])}">${DEFS2}${g}</svg>`}
+
+/* ---------- grip guide (panel under the stage when Grip/Hands is on). Drawn with the same figure engine. ---------- */
+const GRIPTXT={bar:{side:'Bar sits at the base of your fingers. Fingers wrap over the top, thumb wraps under.',front:'Hands one fist-width outside each shoulder, palms facing away, thumbs wrapped.',back:'Hands one fist-width outside each shoulder, palms facing away, thumbs wrapped.'},flat:'Hands under your shoulders, fingers spread and pointing forward. Elbows angle back about 45°.',db:'Palm faces down, wrist straight, firm but relaxed grip in the middle of the handle.'};
+const gLab=(x,y,t,a='start',c='var(--cue)',w=600)=>`<text x="${x}" y="${y}" font-size="12" font-weight="${w}" fill="${c}" text-anchor="${a}" paint-order="stroke" stroke="var(--panel)" stroke-width="3.5" stroke-linejoin="round">${t}</text>`;
+const gTitle=(x,t)=>`<text x="${x}" y="22" font-size="13" font-weight="700" fill="var(--ink)" letter-spacing=".8" font-family="var(--f-display)" style="font-size:16px">${t}</text>`;
+const gLead=(a,b)=>`<path d="M${F(a)} L${F(b)}" stroke="var(--cue)" stroke-width="1.2" fill="none"/><circle cx="${a[0]}" cy="${a[1]}" r="2.6" fill="var(--panel)" stroke="var(--cue)" stroke-width="1.6"/>`;
+const OKI=(x,y,c)=>`<g transform="translate(${x-8} ${y-12})"><circle cx="8" cy="8" r="8" fill="${c}"/><path d="M4.4 8.3l2.4 2.4 4.8-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+const NOI=(x,y,c)=>`<g transform="translate(${x-8} ${y-12})"><circle cx="8" cy="8" r="8" fill="${c}"/><path d="M5.2 5.2l5.6 5.6M10.8 5.2l-5.6 5.6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>`;
+function gripGuide(kind,view){const W=360;let H=216,g='',id='gg'+(++MID);
+ const clip=(x,y,w,h,k)=>`<clipPath id="${id}${k}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10"/></clipPath>`;
+ if(kind==='bar'){
+  /* WIDTH: front view, upper body hanging */
+  const sc=2.15,at=[96,58],o={...FHANG,anchor:'G',at,sc,barFront:1};
+  const fig=drawFront(o,{style:'body'}),P=fig.P,sl=at[0]-19*sc,sr=at[0]+19*sc,hl=P.GL[0],hr=P.GR[0];
+  g+=clip(8,30,176,H-38,'a')+gTitle(14,'WIDTH');
+  g+=`<g clip-path="url(#${id}a)">${fig.svg}</g>`;
+  g+=`<g stroke="var(--h-blue)" stroke-width="1.6" stroke-dasharray="4 3"><line x1="${sl}" x2="${sl}" y1="${at[1]+14}" y2="${H-14}"/><line x1="${sr}" x2="${sr}" y1="${at[1]+14}" y2="${H-14}"/></g>`;
+  [[hl,sl],[sr,hr]].forEach(([a,b])=>{const y=at[1]-14;g+=`<path d="M${a},${y-5}v10M${b},${y-5}v10M${a},${y}H${b}" stroke="var(--accent)" stroke-width="1.8" fill="none"/>`+gLab((a+b)/2,y-8,'1 fist','middle','var(--accent)',700)});
+  g+=`<path d="M${sl},${H-22}H${sr}" stroke="var(--h-blue)" stroke-width="1.6"/><path d="M${sl},${H-26}v8M${sr},${H-26}v8" stroke="var(--h-blue)" stroke-width="1.6"/>`+gLab(at[0],H-28,'shoulders','middle','var(--h-blue)',700);
+  /* WRAP: cross-section of the bar, hand from the side, zoomed */
+  const x0=192;g+=`<line x1="${x0}" x2="${x0}" y1="14" y2="${H-14}" stroke="var(--line)"/>`+gTitle(x0+12,'WRAP');
+  const wsc=4,wat=[238,104],wo={...HANGp,anchor:'G',at:wat,sc:wsc,barSide:1,noFar:1};
+  g+=clip(x0+4,30,W-x0-12,H-38,'b')+`<g clip-path="url(#${id}b)">${drawSide(wo,{style:'body'}).svg}</g>`;
+  const r=RB*wsc,lx=wat[0]+34;
+  g+=gLead([wat[0]+r*.3,wat[1]-r-2.4*wsc],[lx-4,52])+gLab(lx,48,'fingers over')+gLab(lx,62,'the top');
+  g+=gLead([wat[0]+r*.6,wat[1]+r+1.6*wsc],[lx-4,wat[1]+44])+gLab(lx,wat[1]+48,'thumb wraps')+gLab(lx,wat[1]+62,'under');
+  g+=gLead([wat[0]-r-.6*wsc,wat[1]+1],[x0+44,wat[1]+52])+gLab(x0+12,wat[1]+66,'bar at the base')+gLab(x0+12,wat[1]+80,'of the fingers');
+ } else if(kind==='flat'){
+  H=206;
+  const fig=(c,ok)=>{const a=ok?45:88,sx=17,s=[];let t='';
+   /* top view of the body at the bottom of a push-up */
+   t+=`<ellipse cx="${c}" cy="114" rx="21" ry="40" fill="var(--skin)" stroke="var(--skin-edge)" stroke-width="2"/><ellipse cx="${c}" cy="64" rx="10.5" ry="12" fill="var(--skin)" stroke="var(--skin-edge)" stroke-width="2"/>`;
+   [-1,1].forEach(sg=>{const S=[c+sg*sx,84],dv=[sg*Math.sin(a*D2R),Math.cos(a*D2R)],E=[S[0]+dv[0]*34,S[1]+dv[1]*34],Hd=[S[0]+sg*6,S[1]-2];
+    t+=`<path d="M${F(S)} L${F(E)} L${F(Hd)}" fill="none" stroke="var(--skin-edge)" stroke-width="12.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M${F(S)} L${F(E)} L${F(Hd)}" fill="none" stroke="var(--skin)" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    t+=`<g transform="translate(${Hd[0]} ${Hd[1]})">${[-3.6,-1.2,1.2,3.6].map((x,i)=>`<rect x="${x-1.1}" y="${-10+(i===0||i===3?2:0)}" width="2.3" height="8" rx="1.1" fill="var(--skin)" stroke="var(--skin-edge)" stroke-width=".9"/>`).join('')}<ellipse cx="0" cy="0" rx="5.2" ry="4.4" fill="var(--skin)" stroke="var(--skin-edge)" stroke-width="1"/></g>`;
+    const ac=ok?'var(--ok)':'var(--accent)';t+=`<path d="M${S[0]},${S[1]+22} A22 22 0 0 ${sg>0?0:1} ${F([S[0]+dv[0]*22,S[1]+dv[1]*22])}" fill="none" stroke="${ac}" stroke-width="2"/>`});
+   const c2=ok?'var(--ok)':'var(--accent)';t+=(ok?OKI:NOI)(c-46,186,c2)+gLab(c-34,186,ok?'Elbows ~45°':'Elbows 90°','start',c2,700);
+   t+=gLab(c,H-4,ok?'arrow shape':'T shape: strains shoulders','middle','var(--ink-2)',500);return t};
+  g+=gTitle(14,'FROM ABOVE, AT THE BOTTOM')+fig(92,1)+`<line x1="180" x2="180" y1="34" y2="${H-14}" stroke="var(--line)"/>`+fig(270,0);
+ } else if(kind==='db'){
+  H=190;const cy=104;
+  g+=gTitle(14,'PALM-DOWN GRIP')+`<rect x="64" y="${cy-6}" width="232" height="12" rx="4" fill="var(--metal)"/><rect x="40" y="${cy-34}" width="26" height="68" rx="6" fill="var(--metal)" stroke="var(--skin-edge)"/><rect x="294" y="${cy-34}" width="26" height="68" rx="6" fill="var(--metal)" stroke="var(--skin-edge)"/>`;
+  g+=`<path d="M158,${H} L156,${cy+30} C152,${cy+14} 150,${cy-4} 160,${cy-20} C168,${cy-30} 196,${cy-30} 206,${cy-20} C214,${cy-10} 212,${cy+12} 208,${cy+30} L206,${H} Z" fill="var(--skin)" stroke="var(--skin-edge)" stroke-width="2"/>`;
+  g+=[0,1,2,3].map(i=>`<ellipse cx="${166+i*11}" cy="${cy-20}" rx="4.6" ry="3.4" fill="none" stroke="var(--skin-line)" stroke-width="1.4"/>`).join('');
+  g+=`<path d="M170,${cy+8} L170,${cy+30} M182,${cy+6} L182,${cy+30} M194,${cy+8} L194,${cy+30}" stroke="var(--skin-line)" stroke-width="1.2" opacity=".7"/>`;
+  g+=gLead([182,cy-26],[232,44])+gLab(236,48,'knuckles up =')+gLab(236,62,'palm faces down');
+  g+=gLead([207,cy+40],[250,cy+56])+gLab(254,cy+60,'wrist straight');
+  g+=gLead([110,cy],[96,cy+42])+gLab(34,cy+58,'grip the middle');
+ }
+ return `<svg class="gguide" viewBox="0 0 ${W} ${H}" role="img" aria-label="Grip guide">${g}</svg>`}
 
 /* ---------- viewer UI ---------- */
 const VSTATE={};
@@ -923,7 +1034,7 @@ const LAYERS=[['movement','Motion'],['muscles','Muscles'],['grip','Grip'],['cues
 function viewerInner(name){const X=EXD[name],st=vst(name),views=Object.keys(X.views),ph=st.t<.5?0:1;
  const chip=(k,l)=>`<button class="vchip${st.layers[k]?' hold':''}" data-l="${k}" aria-pressed="${!!st.layers[k]}">${l}</button>`;
  const pct=Math.round(st.t*100);
- return `<div class="vhead"><p class="vcap" aria-live="polite"><span class="vstep" aria-label="Step">${ph+1}</span><span>${X.caps[ph]}</span></p>${views.length>1?`<div class="vseg" role="group" aria-label="View">${views.map(v=>`<button data-v="${v}" class="${st.view===v?'on':''}" aria-pressed="${st.view===v}">${v[0].toUpperCase()+v.slice(1)}</button>`).join('')}</div>`:''}</div>
+ return `<div class="vhead"><p class="vcap" aria-live="polite"><span class="vstep" aria-label="Step">${ph+1}</span><span>${X.caps[ph]}</span></p>${views.length>1?`<div class="vseg" role="group" aria-label="View">${views.map(v=>`<button data-v="${v}" class="${st.view===v?'on':''}" aria-pressed="${st.view===v}">${VLAB[v]||v}</button>`).join('')}</div>`:''}</div>
   <div class="vstage">${stageSVG(name,st)}</div>${st.layers.grip&&X.grip?`<div class="vgrip">${gripGuide(X.grip,st.view)}</div>`:''}
   <div class="vctl"><button class="vplay hold" aria-label="${st.play?'Pause':'Play'} animation">${st.play?ICON.pause:ICON.play}</button>
    <div class="vscrub"><input type="range" min="0" max="1000" value="${Math.round(st.t*1000)}" style="--p:${pct}%" aria-label="Position in the movement" aria-valuetext="${pct}% through the rep"><div class="vends"><button data-p="0" class="${!st.play&&st.t<.02?'on':''}">Start</button><button data-p="1" class="${!st.play&&st.t>.98?'on':''}">End</button></div></div></div>

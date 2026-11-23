@@ -10,6 +10,8 @@ Open `index.html` in a browser. Data is saved in the browser (localStorage). Whe
 ## Updates
 Served from GitHub Pages, the app checks for a newer version of itself each time it opens (and when you return to it after 30+ minutes). If you haven't touched anything yet it reloads straight into the new version; otherwise it shows a "New version ready" bar with a Reload button. Saved data stays put. Opened as a local file it doesn't check.
 
+The version number shows in the header (e.g. `v1.1.0`) and comes from `<meta name="crux-version">` in `index.html`. Bump it with every change you ship; after an update the app shows "Updated to vX" once so you can confirm the phone picked it up.
+
 ## Main parts of `index.html`
 - **Theme**: CSS variables at the top of the first `<style>`; the climbing-wall theme (board, holds, bolts) is the second `<style>` block.
 - **Storage**: `persist()` / `boot()`.

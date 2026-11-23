@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Crux Strength Log</title>
+<meta name="crux-version" content="1.1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -69,6 +70,7 @@ details summary::-webkit-details-marker{display:none}
 .timer{position:fixed;right:max(4vw,14px);bottom:max(16px,env(safe-area-inset-bottom));z-index:9;background:var(--granite);color:#fff;border:0;border-radius:30px;min-height:46px;padding:0 16px;font:700 18px "Barlow Condensed",sans-serif;box-shadow:0 6px 20px #0004}
 .timer.run{background:var(--rope)}
 .how summary{min-height:36px;color:var(--slate);font-weight:600;font-size:14px}.dg{display:block;width:100%;max-width:460px;height:auto;margin:8px 0 6px}.mus{margin-top:0}.dh{font:700 18px 'Barlow Condensed',sans-serif;margin:16px 0 0;letter-spacing:.3px}.dg{border-radius:14px}.mleg{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}.mchip{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px;border-radius:20px;background:var(--soft);border:1px solid var(--line)}.mchip i{width:10px;height:10px;border-radius:50%;display:inline-block}.how p{margin:4px 0 0;font-size:15px}.empty{color:var(--mute);text-align:center;padding:24px 8px}
+.top .ver{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:8px;background:#ffffff1a;color:#cfd5da;font:600 12px Inter,sans-serif;vertical-align:1px}
 .upd{position:fixed;left:50%;transform:translateX(-50%);top:max(12px,env(safe-area-inset-top));z-index:20;display:flex;align-items:center;gap:12px;max-width:calc(100% - 28px);padding:8px 8px 8px 16px;border-radius:14px;background:var(--granite);color:#fff;font:600 15px Inter,sans-serif;box-shadow:0 8px 24px #0005}
 .upd button{min-height:44px;padding:0 16px;border:0;border-radius:10px;background:var(--rope);color:#fff;font:700 15px Inter,sans-serif}
 .upd button.x{background:none;color:#aeb6bd;padding:0 10px}
@@ -124,7 +126,7 @@ nav a.on{border-color:var(--h-red)}
 </head>
 <body>
 <header class="top"><div class="in">
-  <div><h1>CRUX <b>/</b> strength log</h1><p>Bodyweight + pull-up bar training for climbing</p></div>
+  <div><h1>CRUX <b>/</b> strength log</h1><p>Bodyweight + pull-up bar training for climbing <span class="ver" id="ver"></span></p></div>
   <div class="kpis" id="kpis"></div>
 </div></header>
 <nav><div class="in">
@@ -881,10 +883,14 @@ boot();
    browser cache, and compare it with the cached copy that is running. If it changed: reload straight away when
    you haven't touched anything yet, otherwise offer a Reload bar. Saved data is untouched (same address). */
 {
+  const VER=(document.querySelector('meta[name=crux-version]')||{}).content||'?',verOf=h=>(h.match(/name="crux-version" content="([^"]+)"/)||[])[1];
+  document.getElementById('ver').textContent='v'+VER;
+  /* after an update, say so once (separate key: the saved workout data is never touched) */
+  try{const was=localStorage.getItem('crux-version');if(was&&was!==VER){const t=document.createElement('div');t.className='upd';t.setAttribute('role','status');t.innerHTML='<span>Updated to v'+VER+'</span><button type="button" class="x">OK</button>';t.querySelector('button').onclick=()=>t.remove();document.body.appendChild(t);setTimeout(()=>t.remove(),6000)}localStorage.setItem('crux-version',VER)}catch(e){}
   let touched=false,lastCheck=0;const t0=Date.now();
   ['pointerdown','keydown','input'].forEach(e=>addEventListener(e,()=>{touched=true},{capture:true,once:true}));
-  const bar=()=>{if(document.querySelector('.upd'))return;const d=document.createElement('div');d.className='upd';d.setAttribute('role','status');
-    d.innerHTML='<span>New version ready</span><button type="button">Reload</button><button type="button" class="x" aria-label="Later">Later</button>';
+  const bar=v=>{document.querySelectorAll('.upd').forEach(x=>x.remove());const d=document.createElement('div');d.className='upd';d.setAttribute('role','status');
+    d.innerHTML='<span>'+(v?'Version '+v+' ready':'New version ready')+'</span><button type="button">Reload</button><button type="button" class="x" aria-label="Later">Later</button>';
     d.querySelector('button').onclick=()=>location.reload();d.querySelector('.x').onclick=()=>d.remove();document.body.appendChild(d)};
   async function checkUpdate(){
     if(!/^https?:$/.test(location.protocol)||!window.fetch)return;
@@ -893,7 +899,7 @@ boot();
       const running=await (await fetch(url,{cache:'force-cache'})).text();
       const r=await fetch(url,{cache:'reload'});if(!r.ok)return;const fresh=await r.text();
       if(!fresh||fresh===running)return;
-      if(!touched&&Date.now()-t0<8000)location.reload();else bar();
+      if(!touched&&Date.now()-t0<8000)location.reload();else bar(verOf(fresh));
     }catch(e){/* offline or blocked: keep running the current copy */}
   }
   addEventListener('load',()=>setTimeout(checkUpdate,600));

@@ -258,7 +258,7 @@ ul.steps li::before{content:'';position:absolute;left:5px;top:6px;width:12px;hei
 /* ---------- progress ---------- */
 .grid4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3);margin:0 0 var(--s3)}
 .grid4 .panel{margin:0}
-@media(min-width:640px){.grid4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:640px){.grid4{grid-template-columns:repeat(4,minmax(0,1fr))}.route{grid-template-columns:minmax(0,220px) minmax(0,1fr)}.route .fig{min-height:300px}}
 .stat{padding:var(--s4)}
 .stat .num{font-size:var(--fs-3xl)}
 .stat .lab{font-size:var(--fs-sm);color:var(--ink-2);font-weight:500;margin-top:2px}
@@ -317,7 +317,7 @@ ul.steps li::before{content:'';position:absolute;left:5px;top:6px;width:12px;hei
 .vcap{flex:1 1 200px;font-size:var(--fs-md);font-weight:600;line-height:1.35;display:flex;gap:var(--s2);align-items:flex-start;min-height:24px}
 .vstep{flex:none;display:inline-grid;place-items:center;width:24px;height:24px;color:#fff;font:700 var(--fs-md)/1 var(--f-display);background:var(--h-red);background-image:var(--sand);border-radius:46% 54% 42% 58%/56% 44% 56% 44%;margin-top:-2px}
 .vseg{display:flex;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r2);padding:3px;gap:2px}
-.vseg button{border:0;background:none;min-height:38px;min-width:52px;padding:0 var(--s3);font-size:var(--fs-sm);color:var(--ink-2);border-radius:8px}
+.vseg button{border:0;background:none;min-height:44px;min-width:52px;padding:0 var(--s3);font-size:var(--fs-sm);color:var(--ink-2);border-radius:8px}
 .vseg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.2),0 0 0 1px var(--line)}
 .vstage{background-color:var(--stage);background-image:radial-gradient(circle,var(--stage-dot) 0 1.4px,transparent 1.8px),radial-gradient(circle,var(--stage-dot) 0 1.4px,transparent 1.8px);background-size:28px 28px;background-position:0 0,14px 14px;border-block:1px solid var(--line)}
 .stage,.gguide{display:block;width:100%;height:auto;font-family:var(--f-body)}
@@ -332,8 +332,8 @@ ul.steps li::before{content:'';position:absolute;left:5px;top:6px;width:12px;hei
 .vscrub input::-moz-range-progress{height:8px;border-radius:8px;background:var(--motion)}
 .vscrub input::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;margin-top:-9px;border-radius:44% 56% 50% 50%/58% 44% 56% 42%;background:var(--bolt-img) center/11px 11px no-repeat,var(--h-orange);box-shadow:0 2px 0 rgba(0,0,0,.3),inset -2px -2px 0 rgba(0,0,0,.2)}
 .vscrub input::-moz-range-thumb{width:26px;height:26px;border:0;border-radius:44% 56% 50% 50%/58% 44% 56% 42%;background:var(--bolt-img) center/11px 11px no-repeat,var(--h-orange)}
-.vends{display:flex;justify-content:space-between;margin-top:-2px}
-.vends button{border:0;background:none;min-height:36px;min-width:52px;padding:0 var(--s1);font-size:var(--fs-sm);color:var(--ink-2);text-align:left}
+.vends{display:flex;justify-content:space-between;margin:-6px 0 -6px}
+.vends button{border:0;background:none;min-height:44px;min-width:52px;padding:0 var(--s1);font-size:var(--fs-sm);color:var(--ink-2);text-align:left}
 .vends button:last-child{text-align:right}
 .vends button.on{color:var(--ink);font-weight:700}
 .vchips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2);padding:var(--s3)}
@@ -800,7 +800,7 @@ const EXD={
   mistake:{pose:{...TOPp,ht:44,wy:-1,th:50,sh:-40},text:'Craning the neck or kicking to reach the bar'},
   steps:['Hang still with hands one fist-width outside your shoulders, palms away, thumbs wrapped.','Pull your shoulders down away from your ears before you bend your arms.','Drive your elbows down toward your back pockets until your chin clears the bar.','Lower under control. Rest 2 minutes between singles.'],
   mistakes:['Craning your neck to “reach” the bar: the chin should clear it, not stretch to it.','Kipping or swinging your legs.','Grinding out ugly reps: log a 0 and do a negative instead.']},
- 'Flexed-arm hang':{type:'bar',views:{side:{a:TOPp,b:MIDp,...BAR_SIDE},front:{a:FTOP,b:FMID,...BAR_FRONT}},
+ 'Flexed-arm hang':{type:'bar',views:{side:{a:TOPp,b:MIDp,...BAR_SIDE},front:{a:FTOP,b:FMID,...BAR_FRONT},back:{a:{...FTOP,back:1},b:{...FMID,back:1},...BAR_FRONT}},
   caps:['Hold: chin above the bar','Time stops when the chin drops below'],trace:null,
   cues:[['a','N','Chin above bar, head neutral'],['a','E','Elbows tucked close'],['a','So','Shoulders down & back'],['both','A','Legs together, no swinging']],
   mistake:{pose:{...TOPp,ht:44,wy:-1},text:'Tilting the head back to keep the chin up'},
@@ -984,12 +984,12 @@ function gripGuide(kind,view){const W=360;let H=216,g='',id='gg'+(++MID);
   g+=`<path d="M${sl},${H-22}H${sr}" stroke="var(--h-blue)" stroke-width="1.6"/><path d="M${sl},${H-26}v8M${sr},${H-26}v8" stroke="var(--h-blue)" stroke-width="1.6"/>`+gLab(at[0],H-28,'shoulders','middle','var(--h-blue)',700);
   /* WRAP: cross-section of the bar, hand from the side, zoomed */
   const x0=192;g+=`<line x1="${x0}" x2="${x0}" y1="14" y2="${H-14}" stroke="var(--line)"/>`+gTitle(x0+12,'WRAP');
-  const wsc=4,wat=[238,104],wo={...HANGp,anchor:'G',at:wat,sc:wsc,barSide:1,noFar:1};
-  g+=clip(x0+4,30,W-x0-12,H-38,'b')+`<g clip-path="url(#${id}b)">${drawSide(wo,{style:'body'}).svg}</g>`;
-  const r=RB*wsc,lx=wat[0]+34;
-  g+=gLead([wat[0]+r*.3,wat[1]-r-2.4*wsc],[lx-4,52])+gLab(lx,48,'fingers over')+gLab(lx,62,'the top');
-  g+=gLead([wat[0]+r*.6,wat[1]+r+1.6*wsc],[lx-4,wat[1]+44])+gLab(lx,wat[1]+48,'thumb wraps')+gLab(lx,wat[1]+62,'under');
-  g+=gLead([wat[0]-r-.6*wsc,wat[1]+1],[x0+44,wat[1]+52])+gLab(x0+12,wat[1]+66,'bar at the base')+gLab(x0+12,wat[1]+80,'of the fingers');
+  const wsc=4.6,wat=[244,98],wo={...HANGp,anchor:'G',at:wat,sc:wsc,barSide:1,noFar:1};
+  g+=clip(x0+4,30,W-x0-12,H-80,'b')+`<g clip-path="url(#${id}b)">${drawSide(wo,{style:'body'}).svg}</g>`;
+  const r=RB*wsc,lx=wat[0]+32;
+  g+=gLead([wat[0]+r*.3,wat[1]-r-2.4*wsc],[lx-4,46])+gLab(lx,44,'fingers')+gLab(lx,58,'over the top');
+  g+=gLead([wat[0]+r*.6,wat[1]+r+1.6*wsc],[lx-4,wat[1]+40])+gLab(lx,wat[1]+44,'thumb')+gLab(lx,wat[1]+58,'wraps under');
+  g+=`<line x1="${x0+12}" x2="${W-12}" y1="${H-48}" y2="${H-48}" stroke="var(--line)"/>`+gLab(x0+12,H-28,'Bar sits at the base','start','var(--ink-2)',500)+gLab(x0+12,H-13,'of your fingers','start','var(--ink-2)',500);
  } else if(kind==='flat'){
   H=206;
   const fig=(c,ok)=>{const a=ok?45:88,sx=17,s=[];let t='';
@@ -1028,7 +1028,7 @@ function vnotes(name,st){const X=EXD[name],n=[],L=st.layers;
  if(L.muscles&&MUS[name])n.push(`<p class="vnote"><i class="k main" aria-hidden="true"></i><span><b>Main:</b> ${MUS[name].p.map(k=>MN[k]).join(', ')}</span></p>${MUS[name].s.length?`<p class="vnote"><i class="k help" aria-hidden="true"></i><span><b>Helpers:</b> ${MUS[name].s.map(k=>MN[k]).join(', ')}</span></p>`:''}`);
  if(L.grip&&X.grip){const g=X.gripNote||GRIPTXT[X.grip];n.push(`<p class="vnote"><i class="k grip" aria-hidden="true"></i><span><b>${X.grip==='bar'?'Grip':'Hands'}:</b> ${typeof g==='string'?g:g[st.view]}</span></p>`)}
  if(L.cues)n.push(`<p class="vnote"><i class="k cue" aria-hidden="true"></i><span><b>Cues</b> for this step are labelled on the figure.</span></p>`);
- if(L.mistake&&X.mistake)n.push(`<p class="vnote bad"><i class="k line" aria-hidden="true"></i><span><b>Avoid:</b> ${X.mistake.text}. <span class="mute">(red dashed outline)</span></span></p>`);
+ if(L.mistake&&X.mistake){const has=!!mistakePose(X,X.views[st.view]),alt=Object.keys(X.views).find(k=>mistakePose(X,X.views[k]));n.push(`<p class="vnote bad"><i class="k line" aria-hidden="true"></i><span><b>Avoid:</b> ${X.mistake.text}. <span class="mute">${has?'(red dashed outline)':alt?`(shown in ${VLAB[alt]} view)`:''}</span></span></p>`)}
  return n.join('')}
 const LAYERS=[['movement','Motion'],['muscles','Muscles'],['grip','Grip'],['cues','Cues'],['mistake','Mistake']];
 function viewerInner(name){const X=EXD[name],st=vst(name),views=Object.keys(X.views),ph=st.t<.5?0:1;

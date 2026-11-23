@@ -19,19 +19,19 @@
    ========================================================================== */
 :root{color-scheme:light dark;
  /* --- wall --- */
- --wall:light-dark(#d7d9da,#3a3f44);
+ --wall:light-dark(#dcdcd9,#383c40);
  --wall-hole:light-dark(#3d4246,#16191b);
  --wall-hole-rim:light-dark(#9ea4a8,#262a2e);
  --wall-hole-lip:light-dark(rgba(255,255,255,.55),rgba(255,255,255,.08));
- --wall-seam:light-dark(rgba(60,66,70,.14),rgba(0,0,0,.35));
+ --wall-seam:transparent;
  /* --- surfaces & ink --- */
- --panel:light-dark(#ffffff,#25292d);
- --panel-2:light-dark(#f1f2f2,#1d2023);
- --outline:light-dark(#2b2f33,#0c0d0e);
+ --panel:light-dark(#fffefb,#26292d);
+ --panel-2:light-dark(#f3f2ee,#1f2225);
+ --outline:light-dark(#2f3337,#0f1112);
  --ink:light-dark(#1f2326,#eef0f1);
  --ink-2:light-dark(#545b61,#a9b1b8);
- --line:light-dark(#d5d8da,#383d42);
- --line-strong:light-dark(#9aa1a6,#59616a);
+ --line:light-dark(#e2e1dc,#383c41);
+ --line-strong:light-dark(#a3a7a8,#6b737b);
  --granite:#2b2f33;--ink-on-dark:#f3f4f5;--ink-on-dark-2:#b9c0c6;
  /* --- colour roles --- */
  --accent:light-dark(#e2452f,#ff6a52);      /* primary action */
@@ -59,17 +59,17 @@
  --plate-far:light-dark(#384045,#5a646d);
  --mus-main:light-dark(#ef4a34,#ff6450);
  --mus-help:light-dark(#f7b3a8,#a3554c);
- --stage:light-dark(#f6f7f7,#2c3136);
+ --stage:light-dark(#f7f6f2,#2d3135);
  --stage-dot:light-dark(rgba(43,47,51,.12),rgba(0,0,0,.4));
  --ghost:light-dark(#6f7980,#93a0aa);
  /* screw hole as a background image (also used for "empty" states) */
  --hole-img:radial-gradient(circle,var(--wall-hole) 0 2.6px,var(--wall-hole-rim) 3px 3.8px,var(--wall-hole-lip) 4.2px 4.8px,transparent 5.2px);
  --tnut:var(--wall-hole);--tnut-ring:var(--wall-hole-rim);--tnut-edge:var(--outline);
- --wall-tex:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .22 0 0 0 0 .24 0 0 0 .55 -.18'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+ --wall-tex:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .22 0 0 0 0 .24 0 0 0 .32 -.12'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
  /* --- spacing / radius / type --- */
  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;--s6:24px;--s7:32px;--s8:40px;
  --gutter:max(16px,env(safe-area-inset-left));
- --r1:6px;--r2:10px;--r3:14px;--r4:18px;--rpill:999px;
+ --r1:6px;--r2:12px;--r3:16px;--r4:22px;--rpill:999px;
  --f-display:"Barlow Condensed","Arial Narrow",Inter,sans-serif;
  --f-body:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
  --fs-xs:12px;--fs-sm:13px;--fs-md:14px;--fs-base:16px;--fs-lg:18px;--fs-xl:22px;--fs-2xl:28px;--fs-3xl:36px;--fs-4xl:44px;
@@ -95,17 +95,19 @@ svg.i{width:18px;height:18px;flex:none;display:block;fill:none;stroke:currentCol
 .vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 /* text sitting straight on the wall gets a soft halo so the holes never fight it */
-.ph,.sec,.status,main>#view>.note,.top h1,.top .ver{text-shadow:0 0 2px var(--wall),0 0 6px var(--wall),0 0 12px var(--wall)}
+.ph,.sec,.status,main>#view>.note,.top h1{background:var(--wall);box-shadow:0 0 10px 8px var(--wall);border-radius:12px}
+.top h1{width:fit-content;padding:2px 6px;margin-left:-6px}
+.ph,.sec,.status,main>#view>.note{width:fit-content;max-width:100%}
 
 /* ---------- header: the wall, a cluster of holds, the title ---------- */
 .top{padding:calc(var(--s5) + env(safe-area-inset-top)) var(--gutter) var(--s4)}
 .top .in{max-width:760px;margin:auto}
 .brand{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
-.top h1{font-size:38px;letter-spacing:.5px;line-height:1;color:var(--ink);white-space:nowrap}
+.top h1{font-size:36px;letter-spacing:.5px;line-height:1;color:var(--ink);white-space:nowrap}
 .top h1 b{color:var(--accent);font-weight:700}
-.top h1 small{font:600 26px/1 var(--f-display);letter-spacing:.3px;color:var(--ink-2)}
-.top .ver{display:inline-block;margin-top:6px;padding:0 7px;border-radius:var(--rpill);border:1.5px solid var(--line-strong);color:var(--ink-2);font:600 11px/16px var(--f-body);vertical-align:2px;text-shadow:none;background:var(--panel)}
-.cluster{width:96px;height:54px;flex:none}
+.top h1 small{font:600 24px/1 var(--f-display);letter-spacing:.3px;color:var(--ink-2)}
+.top .ver{display:inline-block;vertical-align:5px;padding:0 7px;border-radius:var(--rpill);border:1.5px solid var(--line-strong);color:var(--ink-2);font:600 11px/16px var(--f-body);vertical-align:2px;text-shadow:none;background:var(--panel)}
+.cluster{width:84px;height:48px;flex:none}
 .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2);margin-top:var(--s4)}
 .kpi{padding:var(--s2) var(--s3);border-radius:var(--r3);background:var(--panel);border:var(--bw) solid var(--outline);box-shadow:var(--pop)}
 .kpi .num{font-size:var(--fs-2xl);display:flex;align-items:baseline;gap:2px}
@@ -115,7 +117,7 @@ svg.i{width:18px;height:18px;flex:none;display:block;fill:none;stroke:currentCol
 /* ---------- tabs ---------- */
 nav{position:sticky;top:0;z-index:20;padding:calc(var(--s2) + env(safe-area-inset-top)) var(--gutter) var(--s2);background:color-mix(in srgb,var(--wall) 82%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 nav .in{max-width:760px;margin:auto;display:flex;gap:4px;padding:4px;border-radius:var(--r4);background:var(--panel);border:var(--bw) solid var(--outline);box-shadow:var(--pop)}
-nav a{flex:1;display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:12px;color:var(--ink-2);text-decoration:none;font:700 var(--fs-lg)/1 var(--f-display);letter-spacing:.6px;text-transform:uppercase;transition:background var(--t-fast),color var(--t-fast)}
+nav a{flex:1;display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:16px;color:var(--ink-2);text-decoration:none;font:700 var(--fs-lg)/1 var(--f-display);letter-spacing:.4px;transition:background var(--t-fast),color var(--t-fast)}
 nav a.on{background:var(--select);color:var(--select-ink)}
 nav a:active{background:var(--panel-2)}
 
@@ -124,14 +126,14 @@ main{max-width:760px;margin:auto;padding:var(--s3) var(--gutter) calc(112px + en
 .status{display:flex;align-items:center;gap:var(--s1);font-size:var(--fs-xs);font-weight:600;color:var(--ink-2);margin:0 0 var(--s3);min-height:18px}
 .status svg.i{width:14px;height:14px}
 .ph{margin:0 0 var(--s4)}
-.ph h2{font-size:var(--fs-3xl);text-transform:uppercase;letter-spacing:.5px}
+.ph h2{font-size:var(--fs-3xl);letter-spacing:.3px}
 .ph p{color:var(--ink-2);font-size:var(--fs-md);font-weight:500;margin-top:var(--s1)}
-.sec{font:700 var(--fs-xl)/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.6px;margin:var(--s6) 0 var(--s3)}
+.sec{font:700 var(--fs-xl)/1.1 var(--f-display);letter-spacing:.3px;margin:var(--s6) 0 var(--s3)}
 .mute{color:var(--ink-2)}
 .empty{color:var(--ink-2);text-align:center;padding:var(--s5) var(--s2);font-size:var(--fs-md)}
 
 /* ---------- panel ---------- */
-.panel{position:relative;background:var(--panel);border:var(--bw) solid var(--outline);border-radius:var(--r4);padding:var(--s4);margin:0 0 var(--s4);box-shadow:var(--pop)}
+.panel{position:relative;background:var(--panel);border:var(--bw) solid var(--outline);border-radius:var(--r4);padding:18px;margin:0 0 var(--s4);box-shadow:var(--pop)}
 .panel h3{font-size:var(--fs-xl)}
 .panel-t{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
 .panel-t p{font-size:var(--fs-sm);color:var(--ink-2)}
@@ -149,7 +151,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .hold{background:var(--accent);color:var(--accent-ink);font-weight:700}
 .hold.h-green{background:var(--ok-fill)}
 .hold.bolted::before{content:none}
-.cta{width:100%;min-height:56px;margin-top:var(--s2);border-radius:var(--r4);font:700 var(--fs-xl)/1 var(--f-display);letter-spacing:.8px;text-transform:uppercase;box-shadow:var(--pop)}
+.cta{width:100%;min-height:56px;margin-top:var(--s2);border-radius:var(--rpill);font:700 var(--fs-xl)/1 var(--f-display);letter-spacing:.4px;box-shadow:var(--pop)}
 .cta:active:not(:disabled){transform:translateY(3px)}
 .row{display:flex;gap:var(--s2);flex-wrap:wrap;align-items:center}
 
@@ -158,7 +160,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 
 /* ---------- segmented control ---------- */
 .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;margin:0 0 var(--s3);border-radius:var(--r4);background:var(--panel);border:var(--bw) solid var(--outline);box-shadow:var(--pop)}
-.seg button,.seg button.hold{display:flex;align-items:center;justify-content:center;gap:var(--s2);min-height:48px;padding:0 var(--s3);border:0;border-radius:12px;background:transparent;color:var(--ink-2);box-shadow:none;font:700 var(--fs-lg)/1 var(--f-display);letter-spacing:.5px;text-transform:uppercase;transform:none}
+.seg button,.seg button.hold{display:flex;align-items:center;justify-content:center;gap:var(--s2);min-height:48px;padding:0 var(--s3);border:0;border-radius:16px;background:transparent;color:var(--ink-2);box-shadow:none;font:700 var(--fs-xl)/1 var(--f-display);letter-spacing:.3px;transform:none}
 .seg button .bolt{display:none}
 .seg button small{font:600 var(--fs-sm)/1 var(--f-body);letter-spacing:0;text-transform:none;opacity:.85}
 .seg button.on{background:var(--select);color:var(--select-ink)}
@@ -174,9 +176,9 @@ button:disabled{opacity:.4;cursor:not-allowed}
 
 /* sets: an empty set is a screw hole; a logged set is filled in */
 .sets{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:var(--s2);margin:var(--s4) 0 var(--s3)}
-.set{position:relative;display:flex;flex-direction:column;gap:var(--s1);font-size:var(--fs-xs);font-weight:700;color:var(--ink-2);text-transform:uppercase;letter-spacing:.4px}
+.set{position:relative;display:flex;flex-direction:column;gap:var(--s1);font-size:var(--fs-sm);font-weight:600;color:var(--ink-2)}
 .set input{appearance:none;-moz-appearance:textfield;width:100%;min-height:52px;padding:0 var(--s2);text-align:center;font:700 var(--fs-2xl)/1 var(--f-display);color:var(--ink);border-radius:var(--r3);border:var(--bw) dashed var(--line-strong);
- background:var(--panel-2) var(--hole-img) no-repeat center/12px 12px;transition:background-color var(--t-fast),transform var(--t-fast)}
+ background:var(--panel-2) var(--hole-img) no-repeat center/14px 14px;transition:background-color var(--t-fast),transform var(--t-fast)}
 .set input::-webkit-outer-spin-button,.set input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .set input::placeholder{color:transparent}
 .set input:focus{background-image:none;border-style:solid;border-color:var(--focus);background-color:var(--panel)}
@@ -213,7 +215,7 @@ details[open]>.disc .chev{transform:rotate(180deg)}
 .how>.disc{font-weight:700;font-size:var(--fs-md);color:var(--cue)}
 .how>.disc span{display:flex;align-items:center;gap:var(--s2)}
 .how-b{padding-bottom:var(--s2)}
-.dh{display:flex;align-items:center;gap:var(--s2);font:700 var(--fs-lg)/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.8px;margin:var(--s5) 0 var(--s2)}
+.dh{display:flex;align-items:center;gap:var(--s2);font:700 var(--fs-xl)/1.1 var(--f-display);letter-spacing:.3px;margin:var(--s6) 0 var(--s2)}
 .dh::before{content:'';width:10px;height:10px;flex:none;background:var(--hole-img);border-radius:50%}
 .how-b>.dh:first-child{margin-top:var(--s2)}
 .steps{margin:0;padding:0;list-style:none;counter-reset:st}
@@ -286,16 +288,16 @@ ul.steps li::before{content:'';position:absolute;left:5px;top:5px;width:14px;hei
 .upd button.x{background:transparent;color:var(--ink-2);border-color:transparent;box-shadow:none;padding:0 var(--s2)}
 
 /* ---------- diagram viewer ---------- */
-.viewer{margin:var(--s2) 0 var(--s1);border:var(--bw) solid var(--outline);border-radius:var(--r4);overflow:hidden;background:var(--panel)}
+.viewer{margin:var(--s2) 0 var(--s1);border:1.5px solid var(--line-strong);border-radius:var(--r3);overflow:hidden;background:var(--panel)}
 .vhead{display:flex;align-items:center;gap:var(--s2) var(--s3);padding:var(--s3);flex-wrap:wrap}
 .vcap{flex:1 1 200px;font-size:var(--fs-md);font-weight:700;line-height:1.35;display:flex;gap:var(--s2);align-items:flex-start;min-height:24px}
 .vstep{flex:none;display:inline-grid;place-items:center;width:24px;height:24px;color:var(--accent-ink);font:700 var(--fs-md)/1 var(--f-display);background:var(--accent);border:1.5px solid var(--outline);border-radius:50%;margin-top:-2px}
-.vseg{display:flex;background:var(--panel-2);border:var(--bw) solid var(--outline);border-radius:var(--r3);padding:3px;gap:2px}
+.vseg{display:flex;background:var(--panel-2);border:1.5px solid var(--line-strong);border-radius:var(--r3);padding:3px;gap:2px}
 .vseg button{border:0;background:none;min-height:40px;min-width:52px;padding:0 var(--s3);font-size:var(--fs-sm);font-weight:700;color:var(--ink-2);border-radius:10px}
 .vseg button.on{background:var(--select);color:var(--select-ink)}
-.vstage{background-color:var(--stage);background-image:radial-gradient(circle,var(--stage-dot) 0 1.4px,transparent 1.8px),radial-gradient(circle,var(--stage-dot) 0 1.4px,transparent 1.8px);background-size:28px 28px;background-position:0 0,14px 14px;border-block:var(--bw) solid var(--outline)}
+.vstage{background-color:var(--stage);background-image:radial-gradient(circle,var(--stage-dot) 0 1.4px,transparent 1.8px),radial-gradient(circle,var(--stage-dot) 0 1.4px,transparent 1.8px);background-size:28px 28px;background-position:0 0,14px 14px;border-block:1.5px solid var(--line)}
 .stage,.gguide{display:block;width:100%;height:auto;font-family:var(--f-body)}
-.vgrip{background:var(--panel);border-bottom:var(--bw) solid var(--outline)}
+.vgrip{background:var(--panel);border-bottom:1.5px solid var(--line)}
 .vctl{display:flex;align-items:center;gap:var(--s3);padding:var(--s3) var(--s3) 0}
 .vplay.hold{flex:none;width:52px;height:52px;padding:0;border-radius:50%}
 .vplay svg{width:20px;height:20px;fill:currentColor;margin-left:2px}
@@ -328,7 +330,7 @@ ul.steps li::before{content:'';position:absolute;left:5px;top:5px;width:14px;hei
 .k.main{background:var(--mus-main)}.k.help{background:var(--mus-help)}.k.grip{background:var(--h-blue)}.k.cue{background:var(--cue)}.k.mot{background:var(--motion)}
 /* muscle map */
 .mus{margin-top:var(--s1)}
-.dg{display:block;width:100%;max-width:460px;height:auto;margin:0 auto;border-radius:var(--r4);border:var(--bw) solid var(--outline)}
+.dg{display:block;width:100%;max-width:460px;height:auto;margin:0 auto;border-radius:var(--r3);border:1.5px solid var(--line-strong)}
 .mleg{display:flex;flex-direction:column;gap:var(--s2);margin-top:var(--s3)}
 .mleg .vnote{margin:0}
 .why{margin-top:var(--s3);font-size:var(--fs-md);color:var(--ink-2)}
@@ -341,7 +343,7 @@ ul.steps li::before{content:'';position:absolute;left:5px;top:5px;width:14px;hei
 </head>
 <body>
 <header class="top"><div class="in">
-  <div class="brand"><div><h1>CRUX <b>/</b> <small>strength log</small></h1><span class="ver" id="ver"></span></div>
+  <div class="brand"><h1>CRUX <b>/</b> <small>strength log</small> <span class="ver" id="ver"></span></h1>
    <svg class="cluster" viewBox="0 0 132 74" aria-hidden="true" focusable="false">
     <defs><linearGradient id="hs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient></defs>
     <g stroke="var(--outline)" stroke-width="2.2" stroke-linejoin="round">
@@ -459,14 +461,15 @@ const MUS={
  'Hanging knee raises':{p:['abs','hip'],s:['obl','fflex','lats'],why:'Lets you lift your feet up high onto holds while hanging.'},
  'External rotations (7 lb)':{p:['rotator'],s:['reard'],why:'Protects the small shoulder muscles that climbing overloads.'},
  'Reverse wrist curls (7 lb)':{p:['fext'],s:[],why:'Balances your grip muscles and helps prevent climber\'s elbow.'}};
-const musDiag=n=>{const m=MUS[n];if(!m)return'';
+const musDiag=n=>{const m=MUS[n];if(!m)return'';const q=++MID;
  const col=k=>m.p.includes(k)?'var(--mus-main)':m.s.includes(k)?'var(--mus-help)':'var(--skin)';
  const half=M=>Object.entries(M).map(([k,d])=>`<path d="${d}" fill="${col(k)}"/>`).join('');
  const both=s=>s+`<g transform="translate(160,0) scale(-1,1)">${s}</g>`;
  const view=(M,dx,lab,back)=>`<g transform="translate(${dx},8)">
   <g fill="var(--skin-edge)" stroke="var(--skin-edge)" stroke-width="3" stroke-linejoin="round"><ellipse cx="80" cy="27" rx="13.5" ry="17"/>${both(`<path d="${BODY}"/>`)}</g>
   <g fill="var(--skin)"><ellipse cx="80" cy="27" rx="13.5" ry="17"/>${both(`<path d="${BODY}"/>`)}</g>
-  <g stroke="var(--skin-line)" stroke-width="1" stroke-linejoin="round">${both(half(M))}</g>
+  <clipPath id="mm${dx}_${q}"><path d="${BODY}"/><path d="${BODY}" transform="translate(160,0) scale(-1,1)"/></clipPath>
+  <g clip-path="url(#mm${dx}_${q})" stroke="var(--skin-line)" stroke-width="1" stroke-linejoin="round">${both(half(M))}</g>
   ${back?'<path d="M80,48 V176" stroke="var(--skin-line)" stroke-width="1"/>':'<path d="M74,40 Q80,44 86,40" stroke="var(--skin-line)" stroke-width="1.4" fill="none"/>'}
   <text x="80" y="356" font-size="12" font-weight="700" fill="var(--ink-2)" text-anchor="middle" letter-spacing="1">${lab}</text></g>`;
  const names=k=>k.map(x=>MN[x]).join(', ');
@@ -598,6 +601,8 @@ const OUTLINE={ghost:{c:'var(--ghost)',w:2.6,dash:'5 4',fo:.06},bad:{c:'var(--ac
 function outlineSVG(ds,style){const k=OUTLINE[style],id='ol'+(++MID),P=ds.map(d=>`<path d="${d}"/>`).join('');
  return `<mask id="${id}" maskUnits="userSpaceOnUse" x="-400" y="-400" width="1200" height="1200"><rect x="-400" y="-400" width="1200" height="1200" fill="#fff"/><g fill="#000">${P}</g></mask>
   <g opacity="${k.fo}" fill="${k.c}">${P}</g><g mask="url(#${id})" fill="none" stroke="${k.c}" stroke-width="${k.w}" stroke-dasharray="${k.dash}" stroke-linejoin="round">${P}</g>`}
+/* clip muscle overlays to the body part they sit on, so they can never spill past its outline */
+const clipTo=(ds,inner)=>{if(!inner)return'';const id='mc'+(++MID);return `<clipPath id="${id}">${ds.map(d=>`<path d="${d}"/>`).join('')}</clipPath><g clip-path="url(#${id})">${inner}</g>`};
 const unionSVG=(ds,fill,edge,w)=>ds.length?`<g fill="${edge}" stroke="${edge}" stroke-width="${w}" stroke-linejoin="round">${ds.map(d=>`<path d="${d}"/>`).join('')}</g><g fill="${fill}">${ds.map(d=>`<path d="${d}"/>`).join('')}</g>`:'';
 const fillSVG=(ds,fill)=>`<g fill="${fill}">${ds.map(d=>`<path d="${d}"/>`).join('')}</g>`;
 const edgeSVG=(ds,edge,w)=>`<g fill="${edge}" stroke="${edge}" stroke-width="${w}" stroke-linejoin="round">${ds.map(d=>`<path d="${d}"/>`).join('')}</g>`;
@@ -624,7 +629,7 @@ function drawSide(o,st){
     for(const k in MREG_SIDE){const c=col(k);if(!c)continue;MREG_SIDE[k].forEach(r=>{if(r[0]!==seg)return;const S_=segs[seg];
       const pts=seg==='torso'?torsoRegion(S_.a,S_.b,S_.n,r[1],r[2],r[3],r[4],r[5],flat,r[6]):limbRegion(S_.a,S_.b,S_.P,S_.n,r[1],r[2],r[3],r[4],r[5],r[6]);
       g+=`<path d="${smooth(M(pts))}" fill="${c}"/>`;
-      if(k==='abs'&&seg==='torso'){[.24,.38,.52].forEach(u=>{const a=ad(ad(P0.H,nz(sub(P0.S,P0.H)),u*LEN.t),tn,prof(TF,u)*.55),b=ad(ad(P0.H,nz(sub(P0.S,P0.H)),u*LEN.t),tn,prof(TF,u)*.9);g+=linesSVG([[a,b]],M,s,'rgba(0,0,0,.25)',.8)})}})}return g};
+      if(k==='abs'&&seg==='torso'){[.24,.38,.52].forEach(u=>{const a=ad(ad(P0.H,nz(sub(P0.S,P0.H)),u*LEN.t),tn,prof(TF,u)*.55),b=ad(ad(P0.H,nz(sub(P0.S,P0.H)),u*LEN.t),tn,prof(TF,u)*.9);g+=linesSVG([[a,b]],M,s,'rgba(0,0,0,.25)',.8)})}})}return clipTo(SEGD[seg],g)};
   let g='';
   /* dumbbell: far plate sits behind the hand */
   let dbBack='',dbFront='';
@@ -636,6 +641,7 @@ function drawSide(o,st){
   if(farD.length)g+=unionSVG(farD,'var(--skin-far)','var(--skin-edge)',ew);
   g+=dbBack;
   g+=edgeSVG([...coreD,...armD],'var(--skin-edge)',ew);
+  const SEGD={torso:[coreD[0]],th:[coreD[3]],ua:[armD[0],armD[1]],fa:[armD[2]]};
   g+=fillSVG(coreD,'var(--skin)')+mus('torso')+mus('th');
   if(!o.noFace){const C=ad(P0.N,P0.up,9.8),ear=M([ad(ad(C,P0.up,-.8),P0.face,-1.8)])[0],ang=Math.atan2(P0.up[1],P0.up[0])/D2R+90;
     g+=`<ellipse cx="${ear[0]}" cy="${ear[1]}" rx="${1.7*s}" ry="${2.7*s}" fill="var(--skin-line)" transform="rotate(${ang} ${ear[0]} ${ear[1]})"/>`}
@@ -662,12 +668,12 @@ function drawEnd(o,st){const P0=endPose(o),M=v=>mapPts(v,o,P0),P=place(P0,o),s=o
  const pil=M([[-13,-6.4],[13,0]]),g0=`<rect x="${pil[0][0]}" y="${pil[0][1]}" width="${pil[1][0]-pil[0][0]}" height="${pil[1][1]-pil[0][1]}" rx="${3*s}" fill="var(--line-strong)"/>`;
  const c=M([P0.G])[0],r=5.8*s;
  let g=g0+edgeSVG([...coreD,...headD,...armD],'var(--skin-edge)',2.2+.55*Math.min(s,2.4))+fillSVG(coreD,'var(--skin)');
- if(col('rotator'))g+=`<path d="${smooth(M([[-11.6,-33],[-7,-42],[-2,-44],[-3,-37],[-8,-29]]))}" fill="${col('rotator')}"/>`;
+ if(col('rotator'))g+=clipTo([coreD[0]],`<path d="${smooth(M([[-11.6,-33],[-7,-42],[-2,-44],[-3,-37],[-8,-29]]))}" fill="${col('rotator')}"/>`);
  g+=edgeSVG(headD,'var(--skin-edge)',1.4+.3*Math.min(s,2.4))+fillSVG(headD,'var(--skin)');
  {const hc=M([P0.Hd])[0];g+=`<path d="${smooth(M([[-7.6,-23],[-2,-26.6],[5,-26],[9.4,-21.4],[4,-22.6],[-3,-22.4]]))}" fill="var(--skin-line)" opacity=".55"/><ellipse cx="${hc[0]-.4*s}" cy="${hc[1]+9.6*s}" rx="${2.6*s}" ry="${1.4*s}" fill="var(--skin-line)"/>`}
  g+=`<circle cx="${c[0]}" cy="${c[1]}" r="${r}" fill="var(--plate-far)" stroke="var(--skin-edge)" stroke-width="${.9*s}"/><circle cx="${c[0]}" cy="${c[1]}" r="${r*.6}" fill="none" stroke="var(--metal-hi)" stroke-width="${.7*s}" opacity=".35"/>`;
  g+=edgeSVG(armD,'var(--skin-edge)',1.4+.3*Math.min(s,2.4))+fillSVG(armD,'var(--skin)');
- if(col('reard'))g+=`<path d="${smooth(M(limbRegion([1.5,-40.5],P0.E,{f:[[0,6.6],[1,4.6]],b:[[0,6.6],[1,4.6]]},[1,0],0,.8,'b',0,1)))}" fill="${col('reard')}"/>`;
+ if(col('reard'))g+=clipTo([armD[0]],`<path d="${smooth(M(limbRegion([1.5,-40.5],P0.E,{f:[[0,6.6],[1,4.6]],b:[[0,6.6],[1,4.6]]},[1,0],0,.8,'b',0,1)))}" fill="${col('reard')}"/>`);
  g+=linesSVG([[ad(ad(P0.W,P0.d,2),pp(P0.d),3.8),ad(ad(P0.W,P0.d,5.8),pp(P0.d),2.6)]],M,s);
  return {svg:g,P}}
 
@@ -730,13 +736,15 @@ function drawFront(o,st){const P0=frontPose(o),M=v=>mapPts(v,o,P0),P=place(P0,o)
   const L=(pts,w=.8)=>linesSVG([pts.map(T)],M,s,'var(--skin-line)',w);
   if(!back)g+=L([[-12,4],[-2,6.2]])+L([[12,4],[2,6.2]])+L([[-14.6,17],[-8,21],[-1,20.4]],.7)+L([[14.6,17],[8,21],[1,20.4]],.7)+L([[0,23],[0,44]],.6)+`<circle cx="${M([T([0,39])])[0][0]}" cy="${M([T([0,39])])[0][1]}" r="${.9*s}" fill="var(--skin-line)"/>`;
   else g+=L([[0,0],[0,47]],.7)+L([[-4,9],[-11,8],[-10.4,19],[-5,20.4]],.6)+L([[4,9],[11,8],[10.4,19],[5,20.4]],.6)+L([[-10,51],[0,53],[10,51]],.6);
-  if(st.mus){const set=FRONT_MUS[back?'back':'front'];for(const m in set){const c=col(m);if(!c)continue;[-1,1].forEach(sg=>{const r=set[m](sg);if(!r)return;(Array.isArray(r[0][0])?r:[r]).forEach(pl=>{g+=reg(pl.map(T),c)})})}
-    if(!back&&col('quads'))['L','R'].forEach(k=>{const sg=k==='L'?-1:1;g+=reg(limbRegion(P0['Hp'+k],P0['K'+k],PRO.th,[sg,0],.12,.9,'f',0,.95),col('quads'))+reg(limbRegion(P0['Hp'+k],P0['K'+k],PRO.th,[sg,0],.12,.9,'b',0,.7),col('quads'))})}
+  if(st.mus){const set=FRONT_MUS[back?'back':'front'];let tm='';for(const m in set){const c=col(m);if(!c)continue;[-1,1].forEach(sg=>{const r=set[m](sg);if(!r)return;(Array.isArray(r[0][0])?r:[r]).forEach(pl=>{tm+=reg(pl.map(T),c)})})}
+    g+=clipTo([coreD[6]],tm);
+    if(!back&&col('quads'))['L','R'].forEach((k,i)=>{const sg=k==='L'?-1:1;g+=clipTo([coreD[i*3]],reg(limbRegion(P0['Hp'+k],P0['K'+k],PRO.th,[sg,0],.12,.9,'f',0,.95),col('quads'))+reg(limbRegion(P0['Hp'+k],P0['K'+k],PRO.th,[sg,0],.12,.9,'b',0,.7),col('quads')))})}
   {const ea=[[C[0]-8.5,C[1]+.6],[C[0]+8.5,C[1]+.6]];ea.forEach(p=>{const q=M([p])[0];g+=`<ellipse cx="${q[0]}" cy="${q[1]}" rx="${1.6*s}" ry="${2.8*s}" fill="var(--skin-line)"/>`})}
-  g+=edgeSVG(armD,'var(--skin-edge)',1.4+.3*Math.min(s,2.4))+fillSVG(armD,'var(--skin)');
-  if(st.mus)arms.forEach(a=>{const cb=col(back?'triceps':'biceps');if(cb)g+=reg(limbRegion(a.S_,a.E,PRO.ua,a.inner,.26,.88,back?'b':'f',0,1),cb)+reg(limbRegion(a.S_,a.E,PRO.ua,a.inner,.3,.85,back?'f':'b',0,.55),cb);
+  g+=edgeSVG(armD,'var(--skin-edge)',1.4+.3*Math.min(s,2.4))+fillSVG(armD,'var(--skin)');let G2='';
+  if(st.mus)arms.forEach(a=>{let g='';const cb=col(back?'triceps':'biceps');if(cb)g+=reg(limbRegion(a.S_,a.E,PRO.ua,a.inner,.26,.88,back?'b':'f',0,1),cb)+reg(limbRegion(a.S_,a.E,PRO.ua,a.inner,.3,.85,back?'f':'b',0,.55),cb);
     const cd=col(back?'reard':'frontd');if(cd)g+=reg(limbRegion(a.S_,a.E,PRO.ua,a.inner,-.04,.3,'f',-1.05,1.05,'rfan'),cd);
-    const cf=col(back?'fext':'fflex');if(cf)g+=reg(limbRegion(a.E,a.W,PRO.fa,a.inner,.04,.72,'f',-1,1),cf)});
+    const cf=col(back?'fext':'fflex');if(cf)g+=reg(limbRegion(a.E,a.W,PRO.fa,a.inner,.04,.72,'f',-1,1),cf);
+    G2+=clipTo(a.parts.map(x=>smooth(M(x))),g)});g+=G2;
   if(o.barFront&&!back)g+=bar();
   if(fingD.length)g+=edgeSVG(fingD,'var(--skin-edge)',1.2+.3*Math.min(s,2.4))+fillSVG(fingD,'var(--skin)');
   g+=linesSVG(lines,M,s);
@@ -988,10 +996,8 @@ const ICON={play:'<svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 5.
  mistake:'<svg viewBox="0 0 16 16" width="15" height="15"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'};
 function vst(name){const X=EXD[name];return VSTATE[name]||(VSTATE[name]={view:Object.keys(X.views)[0],t:0,layers:{movement:1,muscles:0,grip:0,cues:1,mistake:0},play:0})}
 function vnotes(name,st){const X=EXD[name],n=[],L=st.layers;
- if(L.movement)n.push(`<p class="vnote" style="color:var(--motion)"><i class="k line" aria-hidden="true"></i><span style="color:var(--ink)"><b>Motion:</b> dashed outlines show the start and end positions; the arrow shows the direction of travel.</span></p>`);
  if(L.muscles&&MUS[name])n.push(`<p class="vnote"><i class="k main" aria-hidden="true"></i><span><b>Main:</b> ${MUS[name].p.map(k=>MN[k]).join(', ')}</span></p>${MUS[name].s.length?`<p class="vnote"><i class="k help" aria-hidden="true"></i><span><b>Helpers:</b> ${MUS[name].s.map(k=>MN[k]).join(', ')}</span></p>`:''}`);
  if(L.grip&&X.grip){const g=X.gripNote||GRIPTXT[X.grip];n.push(`<p class="vnote"><i class="k grip" aria-hidden="true"></i><span><b>${X.grip==='bar'?'Grip':'Hands'}:</b> ${typeof g==='string'?g:g[st.view]}</span></p>`)}
- if(L.cues)n.push(`<p class="vnote"><i class="k cue" aria-hidden="true"></i><span><b>Cues</b> for this step are labelled on the figure.</span></p>`);
  if(L.mistake&&X.mistake){const has=!!mistakePose(X,X.views[st.view]),alt=Object.keys(X.views).find(k=>mistakePose(X,X.views[k]));n.push(`<p class="vnote bad"><i class="k line" aria-hidden="true"></i><span><b>Avoid:</b> ${X.mistake.text}. <span class="mute">${has?'(red dashed outline)':alt?`(shown in ${VLAB[alt]} view)`:''}</span></span></p>`)}
  return n.join('')}
 const LAYERS=[['movement','Motion'],['muscles','Muscles'],['grip','Grip'],['cues','Cues'],['mistake','Mistake']];
